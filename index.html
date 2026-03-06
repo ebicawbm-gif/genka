@@ -1,0 +1,2822 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>棚卸CSV → 原価マスター＆レシピ原価（Ver0.6）</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --panel:#101826;
+      --panel2:#0f1723;
+      --text:#e9f0ff;
+      --muted:#a9b6cf;
+      --line:#21304a;
+      --accent:#69a7ff;
+      --accent2:#38d39f;
+      --warn:#ffcc66;
+      --bad:#ff6b6b;
+      --good:#78ffa6;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 14px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background: radial-gradient(1200px 700px at 20% -10%, rgba(105,167,255,.22), transparent 50%),
+                  radial-gradient(900px 600px at 100% 0%, rgba(56,211,159,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(10px);
+      background: rgba(11,15,20,.65);
+      border-bottom:1px solid rgba(33,48,74,.7);
+    }
+    .wrap{max-width:1200px; margin:0 auto; padding:14px 14px;}
+    .top{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
+    .brand{display:flex; gap:12px; align-items:center;}
+    .logo{
+      width:40px; height:40px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(105,167,255,.95), rgba(56,211,159,.9));
+      box-shadow: var(--shadow);
+    }
+    h1{font-size:16px; margin:0}
+    .sub{font-size:12px; color:var(--muted); margin-top:2px}
+    nav{display:flex; gap:8px; flex-wrap:wrap;}
+    .tab{
+      border:1px solid rgba(33,48,74,.8);
+      background: rgba(16,24,38,.7);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-size:13px;
+      transition: .15s transform, .15s background, .15s border-color;
+      user-select:none;
+    }
+    .tab:hover{transform: translateY(-1px); border-color: rgba(105,167,255,.7)}
+    .tab.active{
+      background: rgba(105,167,255,.14);
+      border-color: rgba(105,167,255,.9);
+      box-shadow: 0 0 0 3px rgba(105,167,255,.15);
+    }
+
+    main{padding:18px 0 80px;}
+    .grid{display:grid; grid-template-columns: 1.2fr .8fr; gap:14px;}
+    @media (max-width: 980px){ .grid{grid-template-columns: 1fr;} }
+    .card{
+      background: linear-gradient(180deg, rgba(16,24,38,.88), rgba(15,23,35,.85));
+      border:1px solid rgba(33,48,74,.85);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 10px;
+      border-bottom:1px solid rgba(33,48,74,.75);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    }
+    .card .hd h2{margin:0; font-size:14px}
+    .card .hd .hint{color:var(--muted); font-size:12px; line-height:1.45}
+    .card .bd{padding:14px}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .row > *{flex: 0 0 auto;}
+    .row .grow{flex:1 1 260px}
+    label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
+    input[type="text"], input[type="number"], select, textarea{
+      width:100%;
+      padding:10px 11px;
+      border-radius: 12px;
+      border:1px solid rgba(33,48,74,.9);
+      background: rgba(8,12,18,.65);
+      color: var(--text);
+      outline:none;
+    }
+    textarea{min-height:90px; resize:vertical}
+    input[type="file"]{color:var(--muted)}
+    .btn{
+      border:1px solid rgba(33,48,74,.9);
+      background: rgba(105,167,255,.14);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight:600;
+      transition: .15s transform, .15s background, .15s border-color, .15s opacity;
+      user-select:none;
+    }
+    .btn:hover{transform: translateY(-1px); border-color: rgba(105,167,255,.9)}
+    .btn:active{transform: translateY(0px); opacity:.95}
+    .btn.secondary{background: rgba(255,255,255,.06)}
+    .btn.danger{background: rgba(255,107,107,.12); border-color: rgba(255,107,107,.45)}
+    .btn.good{background: rgba(56,211,159,.12); border-color: rgba(56,211,159,.55)}
+    .btn.small{padding:7px 10px; border-radius:10px; font-size:12px}
+    .btn:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border:1px solid rgba(33,48,74,.9);
+      border-radius: 999px;
+      background: rgba(255,255,255,.05);
+      color:var(--muted);
+      font-size:12px;
+    }
+    .mono{font-family:var(--mono)}
+    .kpi{display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;}
+    @media (max-width: 680px){ .kpi{grid-template-columns:1fr;} }
+    .kpi .box{
+      padding:12px;
+      border-radius: 14px;
+      border:1px solid rgba(33,48,74,.85);
+      background: rgba(255,255,255,.04);
+    }
+    .kpi .big{font-size:18px; font-weight:800}
+    .kpi .lbl{font-size:12px; color:var(--muted); margin-top:4px}
+
+    .tableWrap{
+      overflow:auto;
+      border-radius: 14px;
+      border:1px solid rgba(33,48,74,.85);
+      background: rgba(8,12,18,.4);
+    }
+    table{width:100%; border-collapse: collapse; min-width: 1120px;}
+    thead th{
+      position:sticky; top:0;
+      background: rgba(16,24,38,.96);
+      border-bottom:1px solid rgba(33,48,74,.85);
+      font-size:12px;
+      color: var(--muted);
+      text-align:left;
+      padding:10px 10px;
+      white-space:nowrap;
+      z-index:2;
+    }
+    tbody td{
+      border-top:1px solid rgba(33,48,74,.55);
+      padding:8px 10px;
+      vertical-align: top;
+      font-size:13px;
+    }
+    tbody tr:hover{background: rgba(105,167,255,.06)}
+    .tiny{font-size:11px; color:var(--muted)}
+    .bad{color: var(--bad)}
+    .goodText{color: var(--good)}
+    .warn{color: var(--warn)}
+    .right{text-align:right}
+    .nowrap{white-space:nowrap}
+    .muted{color:var(--muted)}
+    .hr{height:1px; background: rgba(33,48,74,.8); margin:14px 0}
+    .tag{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:4px 8px;
+      font-size:11px;
+      border-radius: 999px;
+      border:1px solid rgba(33,48,74,.85);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .tag.bad{border-color: rgba(255,107,107,.5); background: rgba(255,107,107,.10); color: #ffd0d0}
+    .tag.good{border-color: rgba(56,211,159,.55); background: rgba(56,211,159,.12); color: #c9ffea}
+    .split{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width: 760px){ .split{grid-template-columns:1fr;} }
+
+    .recipeRows{display:flex; flex-direction:column; gap:10px;}
+    .rrow{
+      display:grid;
+      grid-template-columns: 1.2fr .55fr .35fr .5fr .15fr;
+      gap:10px;
+      align-items:end;
+      padding:10px;
+      border-radius: 14px;
+      border:1px solid rgba(33,48,74,.85);
+      background: rgba(255,255,255,.03);
+    }
+    @media (max-width: 980px){
+      .rrow{grid-template-columns:1fr 1fr;}
+      .rrow .span2{grid-column: span 2}
+    }
+
+    .footActions{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      margin-top:12px;
+    }
+    .list{display:flex; flex-direction:column; gap:10px;}
+    .item{
+      padding:12px;
+      border-radius: 14px;
+      border:1px solid rgba(33,48,74,.85);
+      background: rgba(255,255,255,.03);
+      display:flex; gap:10px; justify-content:space-between; align-items:flex-start; flex-wrap:wrap;
+    }
+    .item .title{font-weight:800}
+    .item .meta{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.45}
+    .item .left{display:flex; gap:10px; align-items:flex-start;}
+    .chk{margin-top:4px; transform: scale(1.05);}
+
+    .toast{
+      position: fixed;
+      left: 14px; right: 14px;
+      bottom: 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(33,48,74,.85);
+      background: rgba(16,24,38,.92);
+      box-shadow: var(--shadow);
+      display:none;
+      z-index: 999;
+    }
+    .toast.show{display:block;}
+    .toast .t1{font-weight:800}
+    .toast .t2{font-size:12px; color:var(--muted); margin-top:4px}
+
+    .kbd{
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 7px;
+      border: 1px solid rgba(33,48,74,.85);
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* --- Autocomplete --- */
+    .acWrap{ position:relative; }
+    .suggest{
+      position:absolute;
+      left:0; right:0;
+      top: 44px;
+      border:1px solid rgba(33,48,74,.9);
+      background: rgba(16,24,38,.98);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      max-height: 260px;
+      overflow:auto;
+      display:none;
+      z-index: 30;
+    }
+    .suggest.show{ display:block; }
+    .opt{
+      padding:9px 10px;
+      border-top:1px solid rgba(33,48,74,.55);
+      cursor:pointer;
+      display:flex;
+      gap:10px;
+      justify-content:space-between;
+      align-items:flex-start;
+    }
+    .opt:first-child{ border-top:none; }
+    .opt:hover{ background: rgba(105,167,255,.10); }
+    .opt.active{ background: rgba(105,167,255,.16); }
+    .opt .l1{ font-weight:800; }
+    .opt .l2{ font-size:11px; color: var(--muted); margin-top:3px; line-height:1.4; }
+    .opt .r{
+      text-align:right;
+      min-width: 120px;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .opt .r b{ color: var(--text); font-size: 12px; }
+
+    /* --- Drag&Drop Import --- */
+    .dropZone{
+      border: 1px dashed rgba(105,167,255,.65);
+      background: rgba(105,167,255,.06);
+      border-radius: 14px;
+      padding: 14px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .dropZone.over{
+      border-color: rgba(56,211,159,.85);
+      background: rgba(56,211,159,.08);
+      box-shadow: 0 0 0 3px rgba(56,211,159,.12);
+    }
+    .dzTitle{font-weight:900}
+    .dzSub{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.45}
+    .dzLeft{min-width:260px; flex: 1 1 320px;}
+    .dzRight{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .fileBtn{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .fileBtn input[type="file"]{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      cursor:pointer;
+    }
+
+    /* --- qty presets --- */
+    .presetBar{
+      display:flex; flex-wrap:wrap; gap:6px;
+      margin-top:6px;
+    }
+    .chip{
+      border:1px solid rgba(33,48,74,.9);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding:6px 8px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-size:12px;
+      line-height:1;
+      user-select:none;
+    }
+    .chip:hover{border-color: rgba(105,167,255,.9); transform: translateY(-1px);}
+    .chip:active{transform: translateY(0px); opacity:.95}
+    .presetList{
+      display:flex; flex-direction:column; gap:10px;
+      margin-top:10px;
+    }
+    .presetItem{
+      padding:10px;
+      border-radius: 14px;
+      border:1px solid rgba(33,48,74,.85);
+      background: rgba(255,255,255,.03);
+      display:flex; gap:10px; justify-content:space-between; align-items:flex-start; flex-wrap:wrap;
+    }
+    .presetItem .name{font-weight:900}
+    .presetItem .meta{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.45}
+    .inlineChk{
+      display:inline-flex; align-items:center; gap:8px;
+      user-select:none;
+    }
+    .inlineChk input{transform: scale(1.1);}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>棚卸CSV → 原価マスター＆レシピ原価 <span class="tag mono">Ver0.6</span></h1>
+          <div class="sub">Ver0.6：マスター入力時に「全再描画しない」＝スクロールが吹っ飛ばない（行だけ表示更新）</div>
+        </div>
+      </div>
+      <nav>
+        <button class="tab active" data-tab="import">① CSV取込</button>
+        <button class="tab" data-tab="master">② 原価マスター</button>
+        <button class="tab" data-tab="recipe">③ レシピ原価</button>
+        <button class="tab" data-tab="data">データ管理</button>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <!-- IMPORT -->
+    <section id="tab-import" class="tabPage">
+      <div class="grid">
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>CSVを読み込み</h2>
+              <div class="hint">
+                ・棚卸表CSVの <span class="kbd">商品名 / 単価 / 規格(入数) / 単位</span> を吸い上げます。<br/>
+                ・日本の会計/棚卸エクスポートは <b>Shift_JIS</b> が多いので、まずはShift_JISで読んでください。<br/>
+                ・レシピ候補は <b>エイリアスが入ってるものだけ</b>（エイリアス空白＝使わない）<br/>
+                ・Ver0.5〜：CSVは <b>Price層</b>（単価/規格/単位）に反映。レシピは固定のまま原価だけ更新される。
+              </div>
+            </div>
+            <div class="pill">
+              <span>保存：</span><b class="goodText">このブラウザ内(LocalStorage)</b>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="split">
+              <div>
+                <label>CSVファイル</label>
+                <input id="csvFile" type="file" accept=".csv,text/csv" />
+                <div class="tiny" style="margin-top:6px;">
+                  ※iPadでもOK。ファイルを選ぶだけ。読み込んだらこのページは閉じてもデータ残る（同じ端末/同じブラウザ）。
+                </div>
+              </div>
+              <div>
+                <label>文字コード</label>
+                <select id="csvEncoding">
+                  <option value="Shift_JIS" selected>Shift_JIS（推奨）</option>
+                  <option value="UTF-8">UTF-8</option>
+                  <option value="UTF-8-SIG">UTF-8（BOMあり）</option>
+                </select>
+                <div class="tiny" style="margin-top:6px;">文字化けしたらUTF-8側を試して。</div>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="row">
+              <div class="grow">
+                <label>取り込みモード</label>
+                <select id="importMode">
+                  <option value="merge" selected>マスターにマージ（Baseは保持、Priceだけ更新）</option>
+                  <option value="replace">マスターを置き換え（Base/Priceともクリア。レシピは残す）</option>
+                </select>
+              </div>
+              <div style="min-width:220px;">
+                <label>&nbsp;</label>
+                <button class="btn good" id="btnImport">CSV取り込み</button>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="kpi">
+              <div class="box">
+                <div class="big mono" id="kpiItems">0</div>
+                <div class="lbl">マスター登録数（Base）</div>
+              </div>
+              <div class="box">
+                <div class="big mono" id="kpiAliased">0</div>
+                <div class="lbl">エイリアス登録済み（レシピ候補）</div>
+              </div>
+              <div class="box">
+                <div class="big mono" id="kpiReady">0</div>
+                <div class="lbl">原価計算OK（Base×Price）</div>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <details>
+              <summary class="muted" style="cursor:pointer;">このVer0.6の前提（仕様）</summary>
+              <div class="tiny" style="margin-top:10px; line-height:1.65;">
+                ・Base（固定）：エイリアス/よみ/基準量/メモ/手入力フラグ など。<br/>
+                ・Price（棚卸）：単価/規格/単位 など（CSV取り込みで更新）。<br/>
+                ・JSONバックアップは「Base+レシピ+設定+プリセット」を主役として扱い、<b>インポート時は端末にあるPrice（最新CSV）を優先して保持</b>。<br/>
+                ・Ver0.6：マスター画面の入力で全再描画しない（スクロール飛び対策）。
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>クイック操作</h2>
+              <div class="hint">よく使う系だけ右に置いとく。</div>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="row">
+              <button class="btn secondary" id="btnGoMaster">原価マスターへ</button>
+              <button class="btn secondary" id="btnGoRecipe">レシピへ</button>
+            </div>
+            <div class="hr"></div>
+            <div class="row">
+              <button class="btn secondary" id="btnAutoFillAlias">未登録エイリアスを仮自動生成</button>
+              <button class="btn secondary" id="btnReparseAll">自動解析を全件再実行（Base）</button>
+            </div>
+            <div class="tiny" style="margin-top:10px; line-height:1.6;">
+              邪魔な単品ボトルは、エイリアス空白で放置＝レシピ候補に出ない。
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MASTER -->
+    <section id="tab-master" class="tabPage" style="display:none;">
+      <div class="card">
+        <div class="hd">
+          <div>
+            <h2>原価マスター（Base×Price → 1g/1ml/1個の原価）</h2>
+            <div class="hint">
+              Base（固定）を整えるとレシピ入力が爆速。Price（棚卸）はCSVで更新される想定。<br/>
+              <b>エイリアス空白＝レシピ候補に出さない</b>（単品ボトル等の除外に使う）。<br/>
+              <b>Ver0.6：</b>入力中にスクロールが飛ばない（行だけ表示更新）。
+            </div>
+          </div>
+          <div class="row">
+            <div style="min-width:240px;">
+              <label>検索（商品名/エイリアス/よみ）</label>
+              <input id="masterSearch" type="text" placeholder="例：ぞっと / ZOT / オレンジ / がむしろ など" />
+            </div>
+            <div style="min-width:180px;">
+              <label>フィルタ</label>
+              <select id="masterFilter">
+                <option value="all" selected>全件</option>
+                <option value="missingAlias">エイリアス未登録（=レシピに出ない）</option>
+                <option value="missingCost">原価NG（Base/Price不足）</option>
+                <option value="ready">原価OK</option>
+              </select>
+            </div>
+            <div style="min-width:240px;">
+              <label>一括</label>
+              <div class="row">
+                <button class="btn small secondary" id="btnMasterExportCsv">マスターCSV出力（結合）</button>
+                <button class="btn small secondary" id="btnMasterExportJson">マスターJSON出力（結合・ファイル名指定）</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bd">
+          <div class="tableWrap" id="masterTableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="min-width:320px;">商品名（key）</th>
+                  <th style="min-width:220px;">エイリアス（Base）</th>
+                  <th style="min-width:170px;">よみ（Base）</th>
+                  <th class="right" style="min-width:120px;">単価(円)（Price）</th>
+                  <th style="min-width:110px;">価格単位（Price）</th>
+                  <th style="min-width:220px;">規格/入数（Price）</th>
+                  <th style="min-width:190px;">基準量（Base）</th>
+                  <th class="right" style="min-width:170px;">原価（Base×Price）</th>
+                  <th style="min-width:220px;">メモ（Base）</th>
+                  <th style="min-width:170px;">操作</th>
+                </tr>
+              </thead>
+              <tbody id="masterTbody"></tbody>
+            </table>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row" style="justify-content:space-between;">
+            <div class="tiny">
+              <span class="tag good">OK</span> = 基準量(Base) &gt; 0 かつ 単価(Price) &gt; 0。<br/>
+              商品によって「本単価」なのに規格に24/C/Sが付くことがあるので、基準量(Base)を正に寄せる運用。
+            </div>
+            <div class="row">
+              <button class="btn secondary" id="btnMasterSaveNow">今すぐ保存</button>
+              <button class="btn danger" id="btnMasterClearOverrides">基準量の手入力を全削除（自動解析へ）</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RECIPE -->
+    <section id="tab-recipe" class="tabPage" style="display:none;">
+      <div class="grid">
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>レシピ原価（材料×使用量 → 自動原価）</h2>
+              <div class="hint">
+                材料は <b>エイリアス</b> / <b>よみ(かな)</b> / <b>商品名</b> で検索して候補から選ぶ。<br/>
+                <b>使用量プリセット</b> を登録して、行の横ボタンで一発入力できる（例：リキュール30ml / ビール300ml）。
+              </div>
+            </div>
+            <div class="pill">
+              <span>ショートカット：</span><span class="kbd">Ctrl</span> + <span class="kbd">S</span> で保存
+            </div>
+          </div>
+
+          <div class="bd">
+            <div class="split">
+              <div>
+                <label>レシピ名</label>
+                <input id="recipeName" type="text" placeholder="例：自家製サングリア / ハイボール / アヒージョ など" />
+              </div>
+              <div>
+                <label>出来高（任意）</label>
+                <input id="recipeYield" type="number" min="0" step="1" placeholder="例：10（10杯分/10人前）" />
+                <div class="tiny" style="margin-top:6px;">入力すると「1杯(1人前)あたり原価」も表示。</div>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <details>
+              <summary class="muted" style="cursor:pointer;">使用量プリセット（保存してボタン化）</summary>
+              <div class="tiny" style="margin-top:10px; line-height:1.65;">
+                例：<b>リキュール 30ml</b> / <b>ビール 300ml</b> みたいな定番量を作っておくと、レシピ入力が速い。
+              </div>
+
+              <div class="split" style="margin-top:10px;">
+                <div>
+                  <label>プリセット名</label>
+                  <input id="presetLabel" type="text" placeholder="例：リキュール / ビール / シロップ" />
+                </div>
+                <div>
+                  <label>量</label>
+                  <input id="presetQty" type="number" min="0" step="0.01" placeholder="例：30" />
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:10px; justify-content:space-between;">
+                <div style="min-width:220px;">
+                  <label>単位</label>
+                  <select id="presetUnit">
+                    <option value="ml" selected>ml</option>
+                    <option value="g">g</option>
+                    <option value="個">個</option>
+                  </select>
+                </div>
+                <div class="row" style="margin-top:18px;">
+                  <button class="btn good" id="btnAddPreset">＋ プリセット追加</button>
+                  <button class="btn danger" id="btnClearPresets">プリセット全削除</button>
+                </div>
+              </div>
+
+              <div class="presetList" id="presetList"></div>
+            </details>
+
+            <div class="hr"></div>
+
+            <div class="row">
+              <button class="btn good" id="btnAddRow">＋ 材料行を追加</button>
+              <button class="btn secondary" id="btnClearRecipe">行を全削除</button>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="recipeRows" id="recipeRows"></div>
+
+            <div class="hr"></div>
+
+            <div class="kpi">
+              <div class="box">
+                <div class="big mono" id="kpiRecipeCost">¥0</div>
+                <div class="lbl">合計原価</div>
+              </div>
+              <div class="box">
+                <div class="big mono" id="kpiRecipeCostPer">-</div>
+                <div class="lbl">出来高あたり</div>
+              </div>
+              <div class="box">
+                <div class="big mono" id="kpiRecipeWarnings">0</div>
+                <div class="lbl">原価NG材料（要マスター修正）</div>
+              </div>
+            </div>
+
+            <div class="footActions">
+              <div class="tiny">
+                NGが出たら、<b>原価マスター</b>で「基準量(Base)」や「単価(Price)」を整える。
+              </div>
+              <div class="row">
+                <button class="btn secondary" id="btnGoFixMaster">マスターを開く</button>
+                <button class="btn good" id="btnSaveRecipe">レシピ保存</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>保存済みレシピ</h2>
+              <div class="hint">チェックして「選択削除」or「全削除」。読み込みはボタン。</div>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="row" style="justify-content:space-between;">
+              <label class="inlineChk">
+                <input type="checkbox" id="chkRecipeAll" />
+                <span class="tiny">全選択</span>
+                <span class="pill mono" id="lblRecipeSelected">0 selected</span>
+              </label>
+              <div class="row">
+                <button class="btn small danger" id="btnDeleteSelected" disabled>選択削除</button>
+                <button class="btn small danger" id="btnDeleteAllRecipes">全削除</button>
+              </div>
+            </div>
+            <div class="hr"></div>
+            <div class="list" id="recipeList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATA -->
+    <section id="tab-data" class="tabPage" style="display:none;">
+      <div class="grid">
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>バックアップ（JSON）</h2>
+              <div class="hint">
+                Ver0.5〜：インポート時、端末側のPrice（最新CSV）を優先して保持します（Base/レシピ/設定が主役）。
+              </div>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="row">
+              <button class="btn secondary" id="btnExportAll">全データをJSON出力（ファイル名指定）</button>
+              <button class="btn danger" id="btnWipeAll">全データ初期化（危険）</button>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="dropZone" id="jsonDropZone">
+              <div class="dzLeft">
+                <div class="dzTitle">ここにJSONファイルをドロップ</div>
+                <div class="dzSub">ドロップすると読み込み → 確認ダイアログ後にインポートします（Base/レシピ等は上書き）。</div>
+              </div>
+              <div class="dzRight">
+                <span class="tiny muted">または</span>
+                <span class="btn small secondary fileBtn">
+                  ファイル選択
+                  <input id="jsonFileInput" type="file" accept=".json,application/json" />
+                </span>
+                <button class="btn small secondary" id="btnClearImportArea">貼り付けエリアをクリア</button>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div>
+              <label>JSONを貼り付けてインポート（手動）</label>
+              <textarea id="importJsonArea" placeholder="ここにJSONを貼り付け → インポート（手動でもOK）"></textarea>
+              <div class="row" style="margin-top:10px;">
+                <button class="btn good" id="btnImportAll">JSONインポート</button>
+                <button class="btn secondary" id="btnCopyAll">貼り付けエリアをコピー</button>
+              </div>
+              <div class="tiny" style="margin-top:10px; line-height:1.6;">
+                ※ドロップの方が楽。<br/>
+                ※貼り付けも残してる（LINE等でJSON投げて回収する運用用）
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="hd">
+            <div>
+              <h2>設定</h2>
+              <div class="hint">CSV列の自動検出がコケたとき用（最低限）。</div>
+            </div>
+          </div>
+          <div class="bd">
+            <div class="split">
+              <div>
+                <label>CSV：商品名列（優先：列名検出）</label>
+                <input id="cfgColName" type="text" placeholder="例：商品名 / [商品名] / I" />
+                <div class="tiny" style="margin-top:6px;">空なら自動。IはExcel列（A=1…）として扱う。</div>
+              </div>
+              <div>
+                <label>CSV：単価列（優先：列名検出）</label>
+                <input id="cfgColPrice" type="text" placeholder="例：単価 / 卸単価 / K" />
+              </div>
+              <div>
+                <label>CSV：規格/入数列（任意）</label>
+                <input id="cfgColSpec" type="text" placeholder="例：規格・入数／単位 / J" />
+              </div>
+              <div>
+                <label>CSV：単位列（任意）</label>
+                <input id="cfgColUnit" type="text" placeholder="例：単位 / M" />
+              </div>
+            </div>
+
+            <div class="row" style="margin-top:10px;">
+              <button class="btn good" id="btnSaveCfg">設定保存</button>
+              <button class="btn secondary" id="btnResetCfg">設定リセット</button>
+            </div>
+
+            <div class="hr"></div>
+
+            <details>
+              <summary class="muted" style="cursor:pointer;">今後のVerでやる予定（メモ）</summary>
+              <div class="tiny" style="margin-top:10px; line-height:1.65;">
+                ・Supabase等でクラウド同期（複数iPad共有）<br/>
+                ・レシピをメニューと紐づけ（販売単価→粗利）<br/>
+                ・棚卸CSVの月次差分（単価変動トラッキング）<br/>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast">
+  <div class="t1" id="toastT1">保存しました</div>
+  <div class="t2" id="toastT2">ローカルに保存済み</div>
+</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = "cost_recipe_app_v0_1"; // 0.1〜0.6共通（データ継続）
+  const nowIso = () => new Date().toISOString();
+  const $ = (sel) => document.querySelector(sel);
+
+  // ---------- Load & migrate ----------
+  const loaded = loadState();
+  const state = loaded ? migrate(loaded) : createDefaultState();
+
+  function createDefaultState(){
+    return {
+      version: "0.6",
+      updatedAt: nowIso(),
+      cfg: { colName:"", colPrice:"", colSpec:"", colUnit:"" },
+
+      // split master
+      masterBase: {},
+      masterPrice: {},
+
+      recipes: {},
+      qtyPresets: {
+        ml: [
+          { id: "p_liq_30", label: "リキュール", qty: 30 },
+          { id: "p_beer_300", label: "ビール", qty: 300 }
+        ],
+        g: [],
+        "個": []
+      },
+      ui: { lastTab: "import", recipeSel: [] }
+    };
+  }
+
+  function deepClone(obj){ return JSON.parse(JSON.stringify(obj || {})); }
+
+  function ensureLayers(s){
+    s.masterBase = s.masterBase || {};
+    s.masterPrice = s.masterPrice || {};
+    s.recipes = s.recipes || {};
+    s.qtyPresets = s.qtyPresets || { ml:[], g:[], "個":[] };
+    s.ui = s.ui || { lastTab:"import", recipeSel:[] };
+    if (!Array.isArray(s.ui.recipeSel)) s.ui.recipeSel = [];
+  }
+
+  // migrate old versions (0.1〜0.4 master -> base/price)
+  function migrate(s){
+    if (!s || typeof s !== "object") return createDefaultState();
+
+    s.version = s.version || "0.1";
+    s.updatedAt = s.updatedAt || nowIso();
+    s.cfg = s.cfg || { colName:"", colPrice:"", colSpec:"", colUnit:"" };
+
+    // presets
+    if (!s.qtyPresets || typeof s.qtyPresets !== "object"){
+      s.qtyPresets = createDefaultState().qtyPresets;
+    } else {
+      s.qtyPresets.ml = Array.isArray(s.qtyPresets.ml) ? s.qtyPresets.ml : [];
+      s.qtyPresets.g = Array.isArray(s.qtyPresets.g) ? s.qtyPresets.g : [];
+      s.qtyPresets["個"] = Array.isArray(s.qtyPresets["個"]) ? s.qtyPresets["個"] : [];
+      if (s.qtyPresets.ml.length === 0){
+        s.qtyPresets.ml.push({ id:"p_liq_30", label:"リキュール", qty:30 });
+        s.qtyPresets.ml.push({ id:"p_beer_300", label:"ビール", qty:300 });
+      }
+    }
+
+    // if legacy master exists, convert
+    if (!s.masterBase && s.master){
+      const base = {};
+      const price = {};
+      for (const k of Object.keys(s.master || {})){
+        const e = s.master[k] || {};
+        const key = e.key || k;
+        const rawName = e.rawName || key;
+
+        base[key] = {
+          key,
+          rawName,
+          alias: (e.alias == null) ? "" : String(e.alias),
+          yomi: (e.yomi == null) ? "" : String(e.yomi),
+          baseType: e.baseType || "個",
+          baseQty: Number(e.baseQty) || 0,
+          baseTypeAuto: e.baseTypeAuto || e.baseType || "個",
+          baseQtyAuto: Number(e.baseQtyAuto) || 0,
+          multAuto: Number(e.multAuto) || 1,
+          baseQtyManual: !!e.baseQtyManual,
+          note: (e.note == null) ? "" : String(e.note),
+          updatedAt: e.updatedAt || nowIso()
+        };
+
+        price[key] = {
+          key,
+          unitPrice: Number(e.unitPrice) || 0,
+          priceUnit: (e.priceUnit == null) ? "" : String(e.priceUnit),
+          spec: (e.spec == null) ? "" : String(e.spec),
+          updatedAt: e.updatedAt || nowIso()
+        };
+      }
+      delete s.master;
+      s.masterBase = base;
+      s.masterPrice = price;
+    }
+
+    ensureLayers(s);
+
+    // normalize base entries
+    for (const k of Object.keys(s.masterBase)){
+      const b = s.masterBase[k] || {};
+      b.key = b.key || k;
+      b.rawName = b.rawName || b.key;
+      b.alias = (b.alias == null) ? "" : String(b.alias);
+      b.yomi = (b.yomi == null) ? "" : String(b.yomi);
+      b.baseType = b.baseType || "個";
+      b.baseQty = Number(b.baseQty) || 0;
+      b.baseTypeAuto = b.baseTypeAuto || b.baseType || "個";
+      b.baseQtyAuto = Number(b.baseQtyAuto) || 0;
+      b.multAuto = Number(b.multAuto) || 1;
+      b.baseQtyManual = !!b.baseQtyManual;
+      b.note = (b.note == null) ? "" : String(b.note);
+      b.updatedAt = b.updatedAt || nowIso();
+      s.masterBase[k] = b;
+    }
+
+    // normalize price entries + ensure base stub for price-only keys
+    for (const k of Object.keys(s.masterPrice)){
+      const p = s.masterPrice[k] || {};
+      p.key = p.key || k;
+      p.unitPrice = Number(p.unitPrice) || 0;
+      p.priceUnit = (p.priceUnit == null) ? "" : String(p.priceUnit);
+      p.spec = (p.spec == null) ? "" : String(p.spec);
+      p.updatedAt = p.updatedAt || nowIso();
+      s.masterPrice[k] = p;
+
+      if (!s.masterBase[k]){
+        s.masterBase[k] = {
+          key: k,
+          rawName: k,
+          alias: "",
+          yomi: "",
+          baseType: "個",
+          baseQty: 1,
+          baseTypeAuto: "個",
+          baseQtyAuto: 1,
+          multAuto: 1,
+          baseQtyManual: false,
+          note: "",
+          updatedAt: nowIso()
+        };
+      }
+    }
+
+    // normalize recipes
+    for (const id of Object.keys(s.recipes)){
+      const r = s.recipes[id];
+      if (!r) continue;
+      r.id = r.id || id;
+      r.name = r.name || "";
+      r.yield = (r.yield == null) ? "" : String(r.yield);
+      r.rows = Array.isArray(r.rows) ? r.rows : [];
+      r.updatedAt = r.updatedAt || nowIso();
+    }
+
+    s.version = "0.6";
+    return s;
+  }
+
+  // ---------- Toast ----------
+  const toastEl = $("#toast");
+  const toastT1 = $("#toastT1");
+  const toastT2 = $("#toastT2");
+  let toastTimer = null;
+
+  function toast(t1, t2="") {
+    toastT1.textContent = t1;
+    toastT2.textContent = t2;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2200);
+  }
+
+  // ---------- Storage ----------
+  function saveState(debounced=true) {
+    state.updatedAt = nowIso();
+    const doSave = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (!debounced) { doSave(); return; }
+    clearTimeout(saveState._t);
+    saveState._t = setTimeout(doSave, 250);
+  }
+
+  function loadState() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      return s ? JSON.parse(s) : null;
+    } catch(e) {
+      console.warn(e);
+      return null;
+    }
+  }
+
+  // ---------- Utils ----------
+  function normalizeZenkakuDigits(s) {
+    return String(s).replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFEE0));
+  }
+  function safeText(s){ return (s == null) ? "" : String(s); }
+  function normalizeNumStr(s) {
+    if (s == null) return "";
+    s = String(s).trim();
+    s = normalizeZenkakuDigits(s);
+    s = s.replace(/[，,]/g, "");
+    s = s.replace(/[．]/g, ".");
+    return s;
+  }
+  function toNumber(s) {
+    const t = normalizeNumStr(s);
+    const n = Number(t);
+    return Number.isFinite(n) ? n : 0;
+  }
+  function normKey(rawName) { return safeText(rawName).trim().replace(/\s+/g, " "); }
+  function yen(n){
+    if (!Number.isFinite(n)) return "¥-";
+    const x = Math.round(n);
+    return "¥" + x.toLocaleString("ja-JP");
+  }
+  function fmt(n, d=4){ if (!Number.isFinite(n)) return "-"; return n.toFixed(d); }
+
+  function isCaseUnit(u){
+    u = safeText(u).trim().toUpperCase();
+    return (u === "C/S" || u === "CS" || u === "ケース" || u === "箱" || u === "CASE" || u === "C/S　" );
+  }
+
+  function dateTag(){
+    const d = new Date();
+    const pad = (n)=>String(n).padStart(2,"0");
+    return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}`;
+  }
+
+  function sanitizeFilename(name, ext){
+    let s = safeText(name).trim();
+    if (!s) return "";
+    s = s.replace(/[\\\/:*?"<>|]/g, "_");
+    s = s.replace(/\s+/g, " ").trim();
+    if (ext && !s.toLowerCase().endsWith(ext.toLowerCase())) s += ext;
+    return s;
+  }
+
+  function askFilename(defaultName){
+    const s = prompt("保存するファイル名を入力（拡張子 .json は自動付与OK）", defaultName);
+    if (s == null) return "";
+    return sanitizeFilename(s, ".json");
+  }
+
+  function downloadBlob(blob, filename){
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1200);
+  }
+
+  function escapeHtml(s){
+    return safeText(s)
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+  function escapeHtmlAttr(s){ return escapeHtml(s).replace(/\n/g," "); }
+  function cssEscape(s){ return safeText(s).replace(/\\/g,"\\\\").replace(/"/g,'\\"'); }
+  function shortTime(iso){
+    if (!iso) return "-";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "-";
+    const pad=(n)=>String(n).padStart(2,"0");
+    return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function cryptoId(){ return "r" + Math.random().toString(16).slice(2) + Date.now().toString(16); }
+
+  function getBase(key){ return state.masterBase[key] || null; }
+  function getPrice(key){ return state.masterPrice[key] || null; }
+  function getUnitCost(key){
+    const b = getBase(key);
+    const p = getPrice(key);
+    const unitPrice = Number(p && p.unitPrice) || 0;
+    const qty = Number(b && b.baseQty) || 0;
+    if (unitPrice > 0 && qty > 0) return unitPrice / qty;
+    return 0;
+  }
+  function isReadyKey(key){
+    const b = getBase(key);
+    const p = getPrice(key);
+    if (!b || !p) return false;
+    return (Number(p.unitPrice) > 0) && (Number(b.baseQty) > 0) && safeText(b.baseType).trim().length > 0;
+  }
+
+  // ---------- CSV parse ----------
+  function sniffHeaderRow(rows){
+    if (!rows.length) return null;
+    const r0 = rows[0].map(x => safeText(x));
+    const joined = r0.join(",");
+    if (joined.includes("商品名") || joined.includes("[商品名]") || joined.includes("単価") || joined.includes("[単価]")) {
+      return r0;
+    }
+    return null;
+  }
+  function headerIndex(headers, candidates){
+    const norm = (s) => safeText(s).replace(/[\[\]\s]/g, "");
+    const h = headers.map(x => norm(x));
+    for (const c of candidates){
+      const cn = norm(c);
+      const idx = h.findIndex(v => v === cn || v.includes(cn));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  }
+  function excelColToIndex(colLike){
+    const s = safeText(colLike).trim().toUpperCase();
+    if (!s) return -1;
+    if (/^[A-Z]+$/.test(s)){
+      let n = 0;
+      for (let i=0;i<s.length;i++){
+        n = n*26 + (s.charCodeAt(i)-64);
+      }
+      return n-1;
+    }
+    return -1;
+  }
+  function parseCSV(text){
+    const rows = [];
+    let i = 0, field = "", row = [];
+    let inQuotes = false;
+    while (i < text.length){
+      const c = text[i];
+      if (inQuotes){
+        if (c === '"'){
+          if (text[i+1] === '"'){ field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        }
+        field += c; i++; continue;
+      } else {
+        if (c === '"'){ inQuotes = true; i++; continue; }
+        if (c === ','){ row.push(field); field = ""; i++; continue; }
+        if (c === '\r'){ i++; continue; }
+        if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+        field += c; i++; continue;
+      }
+    }
+    row.push(field);
+    rows.push(row);
+    if (rows.length && rows[rows.length-1].length === 1 && safeText(rows[rows.length-1][0]).trim() === "") rows.pop();
+    return rows;
+  }
+
+  function extractMultiplier(text){
+    text = safeText(text);
+    text = normalizeZenkakuDigits(text);
+    let m = text.match(/(?:x|X|×)\s*(\d{1,3})/);
+    if (m) return Math.max(1, parseInt(m[1],10));
+    m = text.match(/(\d{1,3})\s*[\/／]\s*(C\/S|CS|ケース|箱|個|本|袋|缶|瓶)/i);
+    if (m) return Math.max(1, parseInt(m[1],10));
+    m = text.match(/[・･]\s*(\d{1,3})\s*[\/／]\s*(C\/S|CS|ケース|箱|個|本|袋|缶|瓶)/i);
+    if (m) return Math.max(1, parseInt(m[1],10));
+    return 1;
+  }
+
+  function extractVolumeMl(text){
+    text = safeText(text);
+    text = normalizeZenkakuDigits(text).replace(/[．]/g,".").replace(/\s+/g,"");
+    let m = text.match(/(\d+(?:\.\d+)?)\s*(ml|mL|ML)/);
+    if (m) return { ml: parseFloat(m[1]), src: m[0] };
+    m = text.match(/(\d+(?:\.\d+)?)\s*(cl|cL|CL|ｃｌ)/);
+    if (m) return { ml: parseFloat(m[1]) * 10, src: m[0] };
+    m = text.match(/(\d+(?:\.\d+)?)\s*(cc|ＣＣ)/);
+    if (m) return { ml: parseFloat(m[1]), src: m[0] };
+    m = text.match(/(\d+(?:\.\d+)?)\s*(l|L|ｌ|Ｌ|ℓ)/);
+    if (m) return { ml: parseFloat(m[1]) * 1000, src: m[0] };
+    m = text.match(/(?:^|[^0-9])(\d{2,4})(?:x|X|×)\s*\d{1,3}(?:$|[^a-zA-Z])/);
+    if (m) {
+      const v = parseInt(m[1],10);
+      if (v >= 50 && v <= 4000) return { ml: v, src: m[0] };
+    }
+    return null;
+  }
+
+  function extractWeightG(text){
+    text = safeText(text);
+    text = normalizeZenkakuDigits(text).replace(/[．]/g,".").replace(/\s+/g,"");
+    let m = text.match(/(\d+(?:\.\d+)?)\s*(kg|KG|ＫＧ)/);
+    if (m) return { g: parseFloat(m[1]) * 1000, src: m[0] };
+    m = text.match(/(\d+(?:\.\d+)?)\s*(g|G|ｇ)/);
+    if (m) return { g: parseFloat(m[1]), src: m[0] };
+    return null;
+  }
+
+  function autoDeriveBase(rawName, spec, priceUnit){
+    const text = (safeText(rawName) + " " + safeText(spec)).trim();
+    const vol = extractVolumeMl(text);
+    const w = extractWeightG(text);
+    const mult = extractMultiplier(text);
+
+    let baseType = "個";
+    let baseQty = 1;
+
+    if (vol && vol.ml > 0){ baseType = "ml"; baseQty = vol.ml; }
+    else if (w && w.g > 0){ baseType = "g"; baseQty = w.g; }
+    else { baseType = "個"; baseQty = 1; }
+
+    if (isCaseUnit(priceUnit) && mult > 1){ baseQty = baseQty * mult; }
+    return { baseType, baseQty, mult };
+  }
+
+  function buildAliasDefault(rawName){
+    let s = safeText(rawName).trim();
+    s = s.replace(/^【[^】]+】\s*/,"");
+    s = s.replace(/^[A-Z]{1,4}\d{2,6}\s*/,"");
+    s = s.replace(/\s+/g," ").trim();
+    return s;
+  }
+
+  // ---------- Tabs ----------
+  const tabs = Array.from(document.querySelectorAll(".tab"));
+  const pages = {
+    import: $("#tab-import"),
+    master: $("#tab-master"),
+    recipe: $("#tab-recipe"),
+    data: $("#tab-data")
+  };
+
+  function setTab(tab){
+    tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+    Object.entries(pages).forEach(([k,el]) => el.style.display = (k === tab ? "" : "none"));
+    state.ui.lastTab = tab;
+    saveState();
+    if (tab === "import") renderImportKPIs();
+    if (tab === "master") renderMaster();
+    if (tab === "recipe") renderRecipe();
+    if (tab === "data") renderData();
+  }
+  tabs.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
+
+  // ---------- Import tab buttons ----------
+  $("#btnGoMaster").addEventListener("click", () => setTab("master"));
+  $("#btnGoRecipe").addEventListener("click", () => setTab("recipe"));
+
+  $("#btnAutoFillAlias").addEventListener("click", () => {
+    let cnt = 0;
+    for (const k of Object.keys(state.masterBase)){
+      const b = state.masterBase[k];
+      if (!safeText(b.alias).trim()){
+        b.alias = buildAliasDefault(b.rawName);
+        b.updatedAt = nowIso();
+        cnt++;
+      }
+    }
+    saveState(false);
+    renderImportKPIs();
+    toast("仮エイリアス生成", `${cnt}件に入れた`);
+  });
+
+  $("#btnReparseAll").addEventListener("click", () => {
+    let cnt = 0;
+    for (const k of Object.keys(state.masterBase)){
+      const b = state.masterBase[k];
+      const p = state.masterPrice[k] || {spec:"", priceUnit:""};
+      if (!b.baseQtyManual){
+        const auto = autoDeriveBase(b.rawName, p.spec, p.priceUnit);
+        b.baseTypeAuto = auto.baseType;
+        b.baseQtyAuto = auto.baseQty;
+        b.multAuto = auto.mult;
+        b.baseType = b.baseType || auto.baseType;
+        b.baseQty = (Number(b.baseQty) > 0) ? b.baseQty : auto.baseQty;
+        cnt++;
+      }
+      b.updatedAt = nowIso();
+    }
+    saveState(false);
+    renderImportKPIs();
+    toast("自動解析を再実行", `${cnt}件（Base）`);
+  });
+
+  $("#btnImport").addEventListener("click", async () => {
+    const file = $("#csvFile").files[0];
+    if (!file){ toast("CSV未選択", "ファイルを選んでから取り込み"); return; }
+    const encoding = $("#csvEncoding").value;
+    const mode = $("#importMode").value;
+
+    try{
+      const text = await readFileText(file, encoding);
+      const rows = parseCSV(text);
+      if (!rows.length){ toast("CSVが空っぽ", "中身が無いっぽい"); return; }
+
+      const headers = sniffHeaderRow(rows);
+      const hasHeader = !!headers;
+
+      const idx = resolveColumnIndexes(headers, state.cfg || {});
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+      const extracted = extractItemsFromRows(dataRows, idx);
+
+      if (mode === "replace"){
+        state.masterBase = {};
+        state.masterPrice = {};
+      }
+
+      let added = 0, updated = 0, skipped = 0;
+
+      for (const it of extracted){
+        const key = normKey(it.rawName);
+        if (!key){ skipped++; continue; }
+
+        const base = state.masterBase[key];
+        const price = state.masterPrice[key];
+
+        // upsert price (CSV layer)
+        if (!price){
+          state.masterPrice[key] = {
+            key,
+            unitPrice: it.unitPrice || 0,
+            priceUnit: it.priceUnit || "",
+            spec: it.spec || "",
+            updatedAt: nowIso()
+          };
+        } else {
+          price.unitPrice = it.unitPrice || price.unitPrice;
+          price.priceUnit = it.priceUnit || price.priceUnit;
+          price.spec = it.spec || price.spec;
+          price.updatedAt = nowIso();
+        }
+
+        // upsert base (fixed layer)
+        if (!base){
+          const auto = autoDeriveBase(it.rawName, it.spec, it.priceUnit);
+          state.masterBase[key] = {
+            key,
+            rawName: it.rawName,
+            alias: "",
+            yomi: "",
+            baseType: auto.baseType,
+            baseQty: auto.baseQty,
+            baseTypeAuto: auto.baseType,
+            baseQtyAuto: auto.baseQty,
+            multAuto: auto.mult,
+            baseQtyManual: false,
+            note: "",
+            updatedAt: nowIso()
+          };
+          added++;
+        } else {
+          base.rawName = it.rawName;
+
+          if (!base.baseQtyManual){
+            const p2 = state.masterPrice[key] || {spec:"", priceUnit:""};
+            const auto = autoDeriveBase(base.rawName, p2.spec, p2.priceUnit);
+            base.baseTypeAuto = auto.baseType;
+            base.baseQtyAuto = auto.baseQty;
+            base.multAuto = auto.mult;
+
+            if (!safeText(base.baseType).trim()) base.baseType = auto.baseType;
+            if (!(Number(base.baseQty) > 0)) base.baseQty = auto.baseQty;
+          }
+          base.updatedAt = nowIso();
+          updated++;
+        }
+      }
+
+      saveState(false);
+      renderImportKPIs();
+      if (state.ui.lastTab === "master") renderMaster(); // CSV取り込みは全再描画OK（入力中ではない）
+      toast("CSV取り込み完了", `追加 ${added} / 更新 ${updated} / スキップ ${skipped}`);
+    } catch(e){
+      console.error(e);
+      toast("取り込み失敗", String(e && e.message ? e.message : e));
+    }
+  });
+
+  function readFileText(file, encoding){
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onerror = () => reject(fr.error || new Error("FileReader error"));
+      fr.onload = () => resolve(String(fr.result || ""));
+      fr.readAsText(file, encoding);
+    });
+  }
+
+  function resolveColumnIndexes(headers, cfg){
+    if (headers){
+      const iName = headerIndex(headers, ["商品名","[商品名]","品名"]);
+      const iPrice = headerIndex(headers, ["単価","[単価]","卸単価","仕入単価"]);
+      const iSpec  = headerIndex(headers, ["規格・入数／単位","規格","[規格・入数／単位]","規格入数","規格/入数"]);
+      const iUnit  = headerIndex(headers, ["単位","[単位]","最終受領単位","[最終受領単位]"]);
+
+      const override = (val, current) => {
+        const s = safeText(val).trim();
+        if (!s) return current;
+        if (/^\d+$/.test(s)) return parseInt(s,10);
+        const col = excelColToIndex(s);
+        if (col >= 0) return col;
+        const idx = headerIndex(headers, [s]);
+        return idx >= 0 ? idx : current;
+      };
+
+      return {
+        name: override(cfg.colName, iName >= 0 ? iName : 8),
+        price: override(cfg.colPrice, iPrice >= 0 ? iPrice : 10),
+        spec: override(cfg.colSpec, iSpec >= 0 ? iSpec : 9),
+        unit: override(cfg.colUnit, iUnit >= 0 ? iUnit : 12)
+      };
+    }
+
+    const fallback = (val, defIdx) => {
+      const s = safeText(val).trim();
+      if (!s) return defIdx;
+      if (/^\d+$/.test(s)) return parseInt(s,10);
+      const col = excelColToIndex(s);
+      if (col >= 0) return col;
+      return defIdx;
+    };
+
+    return {
+      name: fallback(cfg.colName, 8),
+      price: fallback(cfg.colPrice, 10),
+      spec: fallback(cfg.colSpec, 9),
+      unit: fallback(cfg.colUnit, 12)
+    };
+  }
+
+  function extractItemsFromRows(rows, idx){
+    const out = [];
+    for (const r of rows){
+      const rawName = safeText(r[idx.name]).trim();
+      if (!rawName) continue;
+      const unitPrice = toNumber(r[idx.price]);
+      const spec = safeText(r[idx.spec]).trim();
+      const priceUnit = safeText(r[idx.unit]).trim();
+      out.push({ rawName, unitPrice, spec, priceUnit });
+    }
+    return out;
+  }
+
+  function renderImportKPIs(){
+    const bases = Object.values(state.masterBase);
+    const total = bases.length;
+    const aliased = bases.filter(b => safeText(b.alias).trim().length > 0).length;
+    const ready = bases.filter(b => isReadyKey(b.key)).length;
+
+    $("#kpiItems").textContent = total.toLocaleString("ja-JP");
+    $("#kpiAliased").textContent = aliased.toLocaleString("ja-JP");
+    $("#kpiReady").textContent = ready.toLocaleString("ja-JP");
+  }
+
+  // ---------- Master ----------
+  $("#masterSearch").addEventListener("input", () => renderMaster());
+  $("#masterFilter").addEventListener("change", () => renderMaster());
+
+  $("#btnMasterSaveNow").addEventListener("click", () => { saveState(false); toast("保存しました", "マスター更新"); });
+
+  $("#btnMasterClearOverrides").addEventListener("click", () => {
+    if (!confirm("基準量の手入力(Manual)を全削除して、自動解析へ戻す？")) return;
+    let cnt = 0;
+    for (const k of Object.keys(state.masterBase)){
+      const b = state.masterBase[k];
+      if (b.baseQtyManual){
+        b.baseQtyManual = false;
+        const p = state.masterPrice[k] || {spec:"", priceUnit:""};
+        const auto = autoDeriveBase(b.rawName, p.spec, p.priceUnit);
+        b.baseTypeAuto = auto.baseType;
+        b.baseQtyAuto = auto.baseQty;
+        b.multAuto = auto.mult;
+        b.baseType = auto.baseType;
+        b.baseQty = auto.baseQty;
+        b.updatedAt = nowIso();
+        cnt++;
+      }
+    }
+    saveState(false);
+    renderMaster();
+    toast("手入力を全削除", `${cnt}件を自動解析に戻した`);
+  });
+
+  $("#btnMasterExportJson").addEventListener("click", () => {
+    const defaultName = `master_merged_v0_6_${dateTag()}.json`;
+    const fn = askFilename(defaultName);
+    if (!fn) return;
+    const merged = getMergedMasterForExport();
+    const blob = new Blob([JSON.stringify(merged, null, 2)], {type:"application/json"});
+    downloadBlob(blob, fn);
+    toast("マスターJSON出力", fn);
+  });
+
+  $("#btnMasterExportCsv").addEventListener("click", () => {
+    const csv = masterToCsvMerged();
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    downloadBlob(blob, `master_merged_v0_6_${dateTag()}.csv`);
+    toast("マスターCSV出力", "ダウンロード開始");
+  });
+
+  function getMergedMasterForExport(){
+    const out = {};
+    for (const k of Object.keys(state.masterBase)){
+      const b = state.masterBase[k];
+      const p = state.masterPrice[k] || {};
+      out[k] = {
+        key: b.key,
+        rawName: b.rawName,
+        alias: b.alias,
+        yomi: b.yomi,
+        baseType: b.baseType,
+        baseQty: b.baseQty,
+        baseTypeAuto: b.baseTypeAuto,
+        baseQtyAuto: b.baseQtyAuto,
+        multAuto: b.multAuto,
+        baseQtyManual: b.baseQtyManual,
+        note: b.note,
+        unitPrice: Number(p.unitPrice) || 0,
+        priceUnit: p.priceUnit || "",
+        spec: p.spec || "",
+        unitCost: getUnitCost(k),
+        updatedAtBase: b.updatedAt || "",
+        updatedAtPrice: p.updatedAt || ""
+      };
+    }
+    return out;
+  }
+
+  function masterToCsvMerged(){
+    const header = [
+      "rawName","alias","yomi","unitPrice","priceUnit","spec",
+      "baseType","baseQty","unitCost","note","updatedAtBase","updatedAtPrice"
+    ];
+    const lines = [header.join(",")];
+    const entries = Object.values(state.masterBase).sort((a,b)=>a.rawName.localeCompare(b.rawName, "ja"));
+    for (const b of entries){
+      const p = state.masterPrice[b.key] || {};
+      const unitCost = getUnitCost(b.key);
+      const row = [
+        csvCell(b.rawName),
+        csvCell(b.alias),
+        csvCell(b.yomi),
+        csvCell(Number(p.unitPrice)||0),
+        csvCell(p.priceUnit||""),
+        csvCell(p.spec||""),
+        csvCell(b.baseType),
+        csvCell(Number(b.baseQty)||0),
+        csvCell(unitCost),
+        csvCell(b.note),
+        csvCell(b.updatedAt||""),
+        csvCell(p.updatedAt||"")
+      ];
+      lines.push(row.join(","));
+    }
+    return lines.join("\n");
+  }
+
+  function csvCell(v){
+    const s = safeText(v);
+    if (/[",\n\r]/.test(s)){ return `"${s.replace(/"/g,'""')}"`; }
+    return s;
+  }
+
+  function normalizeSearch(s){
+    s = safeText(s);
+    s = normalizeZenkakuDigits(s);
+    s = s.toLowerCase();
+    s = s.replace(/\s+/g,"").trim();
+    s = s.replace(/[・･\-\–—_／\/\(\)\[\]【】「」'"“”’’,\.]/g,"");
+    return s;
+  }
+  function kataToHira(str){
+    return safeText(str).replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  }
+  function hiraToKata(str){
+    return safeText(str).replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+  }
+
+  // --- Ver0.6: master render cache + partial row update ---
+  let masterViewKeys = [];
+  const masterRowMap = new Map(); // key -> <tr>
+
+  function renderMaster(){
+    const qRaw = safeText($("#masterSearch").value).trim();
+    const q = normalizeSearch(qRaw);
+    const filter = $("#masterFilter").value;
+
+    let entries = Object.values(state.masterBase);
+
+    if (q){
+      entries = entries.filter(b => {
+        const a = normalizeSearch(b.alias);
+        const y = normalizeSearch(b.yomi);
+        const r = normalizeSearch(b.rawName);
+        return a.includes(q) || y.includes(q) || r.includes(q);
+      });
+    }
+
+    if (filter === "missingAlias"){
+      entries = entries.filter(b => !safeText(b.alias).trim());
+    } else if (filter === "missingCost"){
+      entries = entries.filter(b => !isReadyKey(b.key));
+    } else if (filter === "ready"){
+      entries = entries.filter(b => isReadyKey(b.key));
+    }
+
+    entries.sort((a,b) => a.rawName.localeCompare(b.rawName, "ja"));
+
+    masterViewKeys = entries.map(b => b.key);
+
+    const tbody = $("#masterTbody");
+    tbody.innerHTML = entries.map(b => masterRowHtml(b)).join("");
+
+    masterRowMap.clear();
+    for (const b of entries){
+      const tr = tbody.querySelector(`tr[data-row="${cssEscape(b.key)}"]`);
+      if (tr) masterRowMap.set(b.key, tr);
+    }
+
+    bindMasterRowEvents(entries);
+  }
+
+  function bindMasterRowEvents(entries){
+    for (const b of entries){
+      const key = b.key;
+
+      const aliasEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="alias"]`);
+      if (aliasEl){
+        aliasEl.addEventListener("input", () => {
+          state.masterBase[key].alias = aliasEl.value;
+          state.masterBase[key].updatedAt = nowIso();
+          saveState();
+          renderImportKPIs();
+          // 表自体は再描画しない（スクロール維持）
+          updateMasterRowDisplay(key, { updateStatus:true, updateUpdatedAt:true });
+        });
+      }
+
+      const yomiEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="yomi"]`);
+      if (yomiEl){
+        yomiEl.addEventListener("input", () => {
+          state.masterBase[key].yomi = yomiEl.value;
+          state.masterBase[key].updatedAt = nowIso();
+          saveState();
+          updateMasterRowDisplay(key, { updateUpdatedAt:true });
+        });
+      }
+
+      const priceEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="unitPrice"]`);
+      if (priceEl){
+        priceEl.addEventListener("input", () => {
+          if (!state.masterPrice[key]) state.masterPrice[key] = {key, unitPrice:0, priceUnit:"", spec:"", updatedAt: nowIso()};
+          state.masterPrice[key].unitPrice = toNumber(priceEl.value);
+          state.masterPrice[key].updatedAt = nowIso();
+          saveState();
+          renderImportKPIs();
+          // 行だけ更新
+          updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateUpdatedAt:true });
+        });
+      }
+
+      const unitEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="priceUnit"]`);
+      if (unitEl){
+        unitEl.addEventListener("change", () => {
+          if (!state.masterPrice[key]) state.masterPrice[key] = {key, unitPrice:0, priceUnit:"", spec:"", updatedAt: nowIso()};
+          state.masterPrice[key].priceUnit = unitEl.value;
+          state.masterPrice[key].updatedAt = nowIso();
+
+          const base = state.masterBase[key];
+          const price = state.masterPrice[key];
+          if (base && !base.baseQtyManual){
+            const auto = autoDeriveBase(base.rawName, price.spec, price.priceUnit);
+            base.baseTypeAuto = auto.baseType;
+            base.baseQtyAuto = auto.baseQty;
+            base.multAuto = auto.mult;
+            base.baseType = auto.baseType;
+            base.baseQty = auto.baseQty;
+            base.updatedAt = nowIso();
+
+            // baseQty/baseType inputへ反映（全再描画しない）
+            const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
+            const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
+            if (bqEl) bqEl.value = String(Number(base.baseQty)||0);
+            if (btEl) btEl.value = String(base.baseType||"個");
+          }
+
+          saveState();
+          renderImportKPIs();
+          updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateAutoDetail:true, updateUpdatedAt:true });
+        });
+      }
+
+      const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
+      if (btEl){
+        btEl.addEventListener("change", () => {
+          state.masterBase[key].baseType = btEl.value;
+          state.masterBase[key].baseQtyManual = true;
+          state.masterBase[key].updatedAt = nowIso();
+          saveState();
+          renderImportKPIs();
+          updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateAutoDetail:true, updateUpdatedAt:true });
+        });
+      }
+
+      const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
+      if (bqEl){
+        bqEl.addEventListener("input", () => {
+          state.masterBase[key].baseQty = toNumber(bqEl.value);
+          state.masterBase[key].baseQtyManual = true;
+          state.masterBase[key].updatedAt = nowIso();
+          saveState();
+          renderImportKPIs();
+          updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateAutoDetail:true, updateUpdatedAt:true });
+        });
+      }
+
+      const noteEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="note"]`);
+      if (noteEl){
+        noteEl.addEventListener("input", () => {
+          state.masterBase[key].note = noteEl.value;
+          state.masterBase[key].updatedAt = nowIso();
+          saveState();
+          updateMasterRowDisplay(key, { updateUpdatedAt:true });
+        });
+      }
+
+      const btnRe = document.querySelector(`[data-k="${cssEscape(key)}"][data-act="reparse"]`);
+      if (btnRe){
+        btnRe.addEventListener("click", () => {
+          const base = state.masterBase[key];
+          const price = state.masterPrice[key] || {spec:"", priceUnit:""};
+          const auto = autoDeriveBase(base.rawName, price.spec, price.priceUnit);
+          base.baseTypeAuto = auto.baseType;
+          base.baseQtyAuto = auto.baseQty;
+          base.multAuto = auto.mult;
+          base.baseType = auto.baseType;
+          base.baseQty = auto.baseQty;
+          base.baseQtyManual = false;
+          base.updatedAt = nowIso();
+
+          // inputs reflect
+          const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
+          const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
+          if (bqEl) bqEl.value = String(Number(base.baseQty)||0);
+          if (btEl) btEl.value = String(base.baseType||"個");
+
+          saveState(false);
+          renderImportKPIs();
+          updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateAutoDetail:true, updateUpdatedAt:true });
+          toast("自動解析を反映", buildAliasDefault(base.rawName));
+        });
+      }
+
+      const btnDel = document.querySelector(`[data-k="${cssEscape(key)}"][data-act="delete"]`);
+      if (btnDel){
+        btnDel.addEventListener("click", () => {
+          const base = state.masterBase[key];
+          if (!confirm(`削除する？\n\n${base ? base.rawName : key}`)) return;
+          delete state.masterBase[key];
+          delete state.masterPrice[key];
+          saveState(false);
+          renderImportKPIs();
+          renderMaster(); // 削除は全再描画でOK
+          toast("削除", "マスターから削除した");
+        });
+      }
+    }
+  }
+
+  function updateMasterRowDisplay(key, opts){
+    const tr = masterRowMap.get(key);
+    if (!tr) return;
+
+    const b = state.masterBase[key];
+    const p = state.masterPrice[key] || {unitPrice:0, priceUnit:"", spec:"", updatedAt:""};
+    if (!b) return;
+
+    // status/auto hint in left cell
+    if (opts && opts.updateStatus){
+      const statusWrap = tr.querySelector(`[data-role="status"]`);
+      if (statusWrap){
+        const ok = isReadyKey(key);
+        const statusTag = ok ? `<span class="tag good">OK</span>` : `<span class="tag bad">NG</span>`;
+        const autoHint = (b.baseQtyManual) ? `<span class="tag warn">手入力</span>` : `<span class="tag">自動</span>`;
+        statusWrap.innerHTML = `${statusTag} ${autoHint}`;
+      }
+
+      const aliasWarnEl = tr.querySelector(`[data-role="aliasWarn"]`);
+      if (aliasWarnEl){
+        aliasWarnEl.innerHTML = (!safeText(b.alias).trim())
+          ? `<div class="tiny bad">※エイリアス空白：レシピ候補に出ない</div>`
+          : `<div class="tiny muted">レシピ側はこの名前で選ぶ</div>`;
+      }
+    }
+
+    // auto detail
+    if (opts && opts.updateAutoDetail){
+      const autoDetailEl = tr.querySelector(`[data-role="autoDetail"]`);
+      if (autoDetailEl){
+        autoDetailEl.innerHTML = (!b.baseQtyManual && (b.baseQtyAuto || b.baseTypeAuto))
+          ? `自動：${fmt(Number(b.baseQtyAuto)||0, 2)} ${escapeHtml(b.baseTypeAuto)}（入数×${b.multAuto||1}）`
+          : `自動：-`;
+      }
+    }
+
+    // cost cell
+    if (opts && opts.updateCost){
+      const costWrap = tr.querySelector(`[data-role="costWrap"]`);
+      const cost100 = tr.querySelector(`[data-role="cost100"]`);
+      if (costWrap && cost100){
+        const unitCost = getUnitCost(key);
+        const ok = isReadyKey(key);
+        if (ok){
+          costWrap.innerHTML = `<span class="goodText mono">¥${fmt(unitCost, 4)}</span> / <span class="mono">${escapeHtml(b.baseType)}</span>`;
+        } else {
+          costWrap.innerHTML = `<span class="bad mono">-</span>`;
+        }
+        cost100.textContent = `（参考：100${b.baseType||""}あたり ¥${fmt(unitCost*100, 2)}）`;
+      }
+    }
+
+    // updated at line
+    if (opts && opts.updateUpdatedAt){
+      const upd = tr.querySelector(`[data-role="updatedAt"]`);
+      if (upd){
+        upd.textContent = `更新：Base ${shortTime(b.updatedAt)} / Price ${shortTime(p.updatedAt)}`;
+      }
+    }
+  }
+
+  function masterRowHtml(b){
+    const p = state.masterPrice[b.key] || {unitPrice:0, priceUnit:"", spec:"", updatedAt:""};
+    const unitCost = getUnitCost(b.key);
+    const ok = isReadyKey(b.key);
+
+    const costLabel = ok
+      ? `<span class="goodText mono">¥${fmt(unitCost, 4)}</span> / <span class="mono">${escapeHtml(b.baseType)}</span>`
+      : `<span class="bad mono">-</span>`;
+
+    const statusTag = ok ? `<span class="tag good">OK</span>` : `<span class="tag bad">NG</span>`;
+    const autoHint = (b.baseQtyManual) ? `<span class="tag warn">手入力</span>` : `<span class="tag">自動</span>`;
+
+    const baseTypeOptions = ["ml","g","個"].map(u => `<option value="${u}" ${b.baseType===u?"selected":""}>${u}</option>`).join("");
+    const priceUnit = safeText(p.priceUnit).trim();
+    const priceUnitOptions = ["", "本","個","C/S","箱","袋","缶","瓶","タル","g","ml"]
+      .map(u => `<option value="${u}" ${priceUnit===u?"selected":""}>${u||"(空)"}</option>`).join("");
+
+    const autoDetail = (!b.baseQtyManual && (b.baseQtyAuto || b.baseTypeAuto))
+      ? `自動：${fmt(Number(b.baseQtyAuto)||0, 2)} ${escapeHtml(b.baseTypeAuto)}（入数×${b.multAuto||1}）`
+      : `自動：-`;
+
+    const aliasWarn = !safeText(b.alias).trim()
+      ? `<div class="tiny bad">※エイリアス空白：レシピ候補に出ない</div>`
+      : `<div class="tiny muted">レシピ側はこの名前で選ぶ</div>`;
+
+    return `
+      <tr data-row="${escapeHtml(b.key)}">
+        <td>
+          <div style="font-weight:800;">${escapeHtml(b.rawName)}</div>
+          <div class="tiny" data-role="status">${statusTag} ${autoHint}</div>
+        </td>
+        <td>
+          <input type="text" data-k="${escapeHtmlAttr(b.key)}" data-f="alias" placeholder="例：ゾットブロンド / ガムシロ" value="${escapeHtmlAttr(b.alias||"")}" />
+          <div data-role="aliasWarn">${aliasWarn}</div>
+        </td>
+        <td>
+          <input type="text" data-k="${escapeHtmlAttr(b.key)}" data-f="yomi" placeholder="例：ぞっとぶろんど / がむしろ" value="${escapeHtmlAttr(b.yomi||"")}" />
+          <div class="tiny muted">読み検索用（任意）</div>
+        </td>
+        <td class="right">
+          <input type="number" min="0" step="0.01" data-k="${escapeHtmlAttr(b.key)}" data-f="unitPrice" value="${escapeHtmlAttr(Number(p.unitPrice)||0)}" />
+        </td>
+        <td>
+          <select data-k="${escapeHtmlAttr(b.key)}" data-f="priceUnit">${priceUnitOptions}</select>
+          <div class="tiny muted">単価が何単位か（Price）</div>
+        </td>
+        <td>
+          <div class="mono">${escapeHtml(p.spec||"")}</div>
+          <div class="tiny muted">CSV由来（Price）</div>
+        </td>
+        <td>
+          <div class="row" style="gap:8px;">
+            <div style="width:120px;">
+              <input type="number" min="0" step="0.01" data-k="${escapeHtmlAttr(b.key)}" data-f="baseQty" value="${escapeHtmlAttr(Number(b.baseQty)||0)}" />
+            </div>
+            <div style="width:70px;">
+              <select data-k="${escapeHtmlAttr(b.key)}" data-f="baseType">${baseTypeOptions}</select>
+            </div>
+          </div>
+          <div class="tiny" data-role="autoDetail">${autoDetail}</div>
+        </td>
+        <td class="right nowrap">
+          <div data-role="costWrap">${costLabel}</div>
+          <div class="tiny muted" data-role="cost100">（参考：100${escapeHtml(b.baseType||"")}あたり ¥${fmt(unitCost*100, 2)}）</div>
+        </td>
+        <td>
+          <input type="text" data-k="${escapeHtmlAttr(b.key)}" data-f="note" placeholder="例：本単価 / 仕入先 / 補足" value="${escapeHtmlAttr(b.note||"")}" />
+        </td>
+        <td>
+          <div class="row" style="gap:8px;">
+            <button class="btn small secondary" data-k="${escapeHtmlAttr(b.key)}" data-act="reparse">自動解析</button>
+            <button class="btn small danger" data-k="${escapeHtmlAttr(b.key)}" data-act="delete">削除</button>
+          </div>
+          <div class="tiny muted" data-role="updatedAt">更新：Base ${escapeHtml(shortTime(b.updatedAt))} / Price ${escapeHtml(shortTime(p.updatedAt))}</div>
+        </td>
+      </tr>
+    `;
+  }
+
+  // ---------- Recipe ----------
+  let recipeDraft = { id:null, name:"", yield:"", rows:[] };
+
+  let recipeSelection = new Set(Array.isArray(state.ui.recipeSel) ? state.ui.recipeSel : []);
+
+  $("#btnAddRow").addEventListener("click", () => { addRecipeRow(); renderRecipeRows(); recalcRecipe(); });
+  $("#btnClearRecipe").addEventListener("click", () => {
+    if (!confirm("材料行を全部消す？")) return;
+    recipeDraft.rows = [];
+    renderRecipeRows();
+    recalcRecipe();
+  });
+  $("#btnGoFixMaster").addEventListener("click", () => setTab("master"));
+  $("#btnSaveRecipe").addEventListener("click", () => saveRecipeDraft());
+
+  $("#recipeName").addEventListener("input", () => { recipeDraft.name = $("#recipeName").value; });
+  $("#recipeYield").addEventListener("input", () => { recipeDraft.yield = $("#recipeYield").value; recalcRecipe(); });
+
+  window.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s"){
+      e.preventDefault();
+      if (state.ui.lastTab === "recipe") saveRecipeDraft();
+      else if (state.ui.lastTab === "master") { saveState(false); toast("保存しました", "マスター"); }
+    }
+  });
+
+  function addRecipeRow(prefillRawKey=""){
+    recipeDraft.rows.push({
+      id: cryptoId(),
+      rawKey: prefillRawKey,
+      ingText: prefillRawKey ? (getAliasForKey(prefillRawKey) || "") : "",
+      qty: ""
+    });
+  }
+  function getAliasForKey(rawKey){
+    const b = state.masterBase[rawKey];
+    if (!b) return "";
+    return safeText(b.alias).trim() || "";
+  }
+
+  function renderRecipe(){
+    $("#recipeName").value = recipeDraft.name || "";
+    $("#recipeYield").value = recipeDraft.yield || "";
+
+    renderPresetList();
+
+    if (!recipeDraft.rows.length) addRecipeRow();
+    for (const r of recipeDraft.rows){
+      if (r.rawKey && !safeText(r.ingText).trim()){
+        const b = state.masterBase[r.rawKey];
+        r.ingText = getAliasForKey(r.rawKey) || buildAliasDefault(b ? b.rawName : r.rawKey);
+      }
+    }
+    renderRecipeRows();
+    recalcRecipe();
+    renderRecipeList();
+  }
+
+  // ---- Presets ----
+  $("#btnAddPreset").addEventListener("click", () => {
+    const label = safeText($("#presetLabel").value).trim();
+    const qty = toNumber($("#presetQty").value);
+    const unit = $("#presetUnit").value;
+
+    if (!(qty > 0)){
+      toast("プリセット追加NG", "量を正しく入れて");
+      return;
+    }
+    const finalLabel = label || `${qty}${unit}`;
+    const id = "p_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
+    state.qtyPresets[unit] = Array.isArray(state.qtyPresets[unit]) ? state.qtyPresets[unit] : [];
+    state.qtyPresets[unit].push({ id, label: finalLabel, qty });
+    saveState(false);
+
+    $("#presetLabel").value = "";
+    $("#presetQty").value = "";
+    renderPresetList();
+    updateAllRecipeRowDisplays();
+    toast("プリセット追加", `${finalLabel}（${qty}${unit}）`);
+  });
+
+  $("#btnClearPresets").addEventListener("click", () => {
+    if (!confirm("プリセットを全削除する？")) return;
+    if (!confirm("本当に？（最終確認）")) return;
+    state.qtyPresets = { ml:[], g:[], "個":[] };
+    saveState(false);
+    renderPresetList();
+    updateAllRecipeRowDisplays();
+    toast("プリセット全削除", "完了");
+  });
+
+  function renderPresetList(){
+    const box = $("#presetList");
+    if (!box) return;
+
+    const all = [
+      ...(state.qtyPresets.ml||[]).map(p => ({...p, unit:"ml"})),
+      ...(state.qtyPresets.g||[]).map(p => ({...p, unit:"g"})),
+      ...(state.qtyPresets["個"]||[]).map(p => ({...p, unit:"個"}))
+    ].sort((a,b) => (a.unit+b.label).localeCompare(b.unit+a.label, "ja"));
+
+    if (!all.length){
+      box.innerHTML = `<div class="tiny muted">まだプリセットがない。例：リキュール 30ml / ビール 300ml</div>`;
+      return;
+    }
+
+    box.innerHTML = all.map(p => `
+      <div class="presetItem">
+        <div>
+          <div class="name">${escapeHtml(p.label)}</div>
+          <div class="meta">量：<span class="mono">${escapeHtml(p.qty)} ${escapeHtml(p.unit)}</span></div>
+        </div>
+        <div class="row">
+          <button class="btn small danger" data-act="delPreset" data-unit="${escapeHtmlAttr(p.unit)}" data-id="${escapeHtmlAttr(p.id)}">削除</button>
+        </div>
+      </div>
+    `).join("");
+
+    Array.from(box.querySelectorAll(`[data-act="delPreset"]`)).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const unit = btn.getAttribute("data-unit");
+        const id = btn.getAttribute("data-id");
+        if (!unit || !id) return;
+        if (!confirm("このプリセットを削除する？")) return;
+
+        state.qtyPresets[unit] = (state.qtyPresets[unit] || []).filter(p => String(p.id) !== String(id));
+        saveState(false);
+        renderPresetList();
+        updateAllRecipeRowDisplays();
+        toast("プリセット削除", "完了");
+      });
+    });
+  }
+
+  // ---- Autocomplete ----
+  const suggestState = {};
+  function getSuggestState(rowId){
+    if (!suggestState[rowId]) suggestState[rowId] = {items:[], activeIndex:0, open:false};
+    return suggestState[rowId];
+  }
+  function isSuggestOpen(rowId){ return !!getSuggestState(rowId).open; }
+
+  function recipeRowHtml(r){
+    const b = state.masterBase[r.rawKey];
+    const unit = b ? (b.baseType || "個") : "-";
+    const unitCost = r.rawKey ? getUnitCost(r.rawKey) : 0;
+    const qty = toNumber(r.qty);
+    const lineCost = (unitCost > 0 && qty > 0) ? unitCost * qty : 0;
+    const hasText = safeText(r.ingText).trim().length > 0;
+    const ng = (r.rawKey && !isReadyKey(r.rawKey)) ? true : false;
+
+    const msg = !hasText
+      ? "ここに入力（よみ/エイリアス/商品名）→候補から選択"
+      : (!r.rawKey ? "候補から選ぶ（未選択）" : (ng ? "原価NG：Base/Priceを整えて" : "OK"));
+
+    return `
+      <div class="rrow">
+        <div class="span2">
+          <label>材料（自由入力 → 候補から選択）</label>
+          <div class="acWrap">
+            <input type="text"
+                   autocomplete="off"
+                   data-rid="${escapeHtmlAttr(r.id)}"
+                   data-f="ing"
+                   placeholder="例：がむしろ / オレンジ / ぞっと など"
+                   value="${escapeHtmlAttr(r.ingText||"")}" />
+            <div class="suggest" data-rid="${escapeHtmlAttr(r.id)}" data-role="suggest"></div>
+          </div>
+          <div class="tiny ${ng ? "bad":"muted"}" data-rid="${escapeHtmlAttr(r.id)}" data-role="msg">${escapeHtml(msg)}</div>
+        </div>
+
+        <div>
+          <label>使用量</label>
+          <input type="number" min="0" step="0.01" data-rid="${escapeHtmlAttr(r.id)}" data-f="qty" value="${escapeHtmlAttr(r.qty||"")}" placeholder="例：30" />
+          <div class="presetBar" data-rid="${escapeHtmlAttr(r.id)}" data-role="presetBtns">
+            ${presetBtnsHtml(r.id, unit)}
+          </div>
+        </div>
+
+        <div>
+          <label>単位</label>
+          <div class="pill mono" data-rid="${escapeHtmlAttr(r.id)}" data-role="unit" style="height:42px; justify-content:center;">${escapeHtml(unit)}</div>
+        </div>
+
+        <div>
+          <label>この行の原価</label>
+          <div class="pill mono" data-rid="${escapeHtmlAttr(r.id)}" data-role="lineCost" style="height:42px; justify-content:center;">
+            ${lineCost>0 ? yen(lineCost) : "¥0"}
+          </div>
+          <div class="tiny muted" data-rid="${escapeHtmlAttr(r.id)}" data-role="unitCost">単価：¥${fmt(unitCost,4)}/${escapeHtml(unit)}</div>
+        </div>
+
+        <div>
+          <label>&nbsp;</label>
+          <button class="btn small danger" data-rid="${escapeHtmlAttr(r.id)}" data-act="del">×</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function presetBtnsHtml(rowId, unitType){
+    if (!unitType || unitType === "-") return "";
+    const arr = state.qtyPresets[unitType] || [];
+    if (!arr.length) return "";
+    return arr.slice(0, 8).map(p => {
+      const label = safeText(p.label).trim() || `${p.qty}${unitType}`;
+      return `<button class="chip" data-rid="${escapeHtmlAttr(rowId)}" data-act="preset" data-val="${escapeHtmlAttr(p.qty)}">${escapeHtml(label)} ${escapeHtml(p.qty)}${escapeHtml(unitType)}</button>`;
+    }).join("");
+  }
+
+  function showSuggestions(rowId){
+    const row = recipeDraft.rows.find(x => x.id === rowId);
+    const sugEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-role="suggest"]`);
+    const ingEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-f="ing"]`);
+    if (!row || !sugEl || !ingEl) return;
+
+    const qRaw = safeText(row.ingText).trim();
+    const qN = normalizeSearch(qRaw);
+    const items = buildCandidates(qRaw, qN);
+
+    const st = getSuggestState(rowId);
+    st.items = items;
+    st.activeIndex = 0;
+    st.open = true;
+
+    sugEl.innerHTML = items.length ? items.map((it, idx) => suggestItemHtml(it, idx===0)).join("")
+                                  : `<div class="opt"><div><div class="l1">候補なし</div><div class="l2">エイリアス空白の品目は候補に出ない</div></div><div class="r">-</div></div>`;
+    sugEl.classList.add("show");
+
+    Array.from(sugEl.querySelectorAll(".opt[data-key]")).forEach((optEl) => {
+      optEl.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        const key = optEl.getAttribute("data-key");
+        if (key) selectCandidate(rowId, key);
+      });
+    });
+  }
+
+  function hideSuggestions(rowId){
+    const sugEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-role="suggest"]`);
+    if (sugEl) sugEl.classList.remove("show");
+    const st = getSuggestState(rowId);
+    st.open = false;
+  }
+
+  function moveSuggest(rowId, delta){
+    const sugEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-role="suggest"]`);
+    const st = getSuggestState(rowId);
+    if (!sugEl) return;
+    const n = st.items.length;
+    if (!n) return;
+
+    st.activeIndex = (st.activeIndex + delta + n) % n;
+
+    const opts = Array.from(sugEl.querySelectorAll(".opt[data-key]"));
+    opts.forEach((el, i) => el.classList.toggle("active", i === st.activeIndex));
+
+    const activeEl = opts[st.activeIndex];
+    if (activeEl){
+      const top = activeEl.offsetTop;
+      const bottom = top + activeEl.offsetHeight;
+      if (top < sugEl.scrollTop) sugEl.scrollTop = top;
+      else if (bottom > sugEl.scrollTop + sugEl.clientHeight) sugEl.scrollTop = bottom - sugEl.clientHeight;
+    }
+  }
+
+  function suggestItemHtml(it, isActive){
+    const yomi = safeText(it.yomi).trim();
+    const sub = [
+      yomi ? `よみ：${yomi}` : "",
+      it.rawName ? `元：${it.rawName}` : ""
+    ].filter(Boolean).join(" / ");
+
+    const unitStr = `${it.baseType}`;
+    const unitCost = it.unitCost > 0 ? `¥${fmt(it.unitCost, 4)}/${unitStr}` : `-`;
+
+    return `
+      <div class="opt ${isActive ? "active":""}" data-key="${escapeHtmlAttr(it.key)}">
+        <div>
+          <div class="l1">${escapeHtml(it.alias)}</div>
+          <div class="l2">${escapeHtml(sub || " ")}</div>
+        </div>
+        <div class="r">
+          <b>${escapeHtml(unitCost)}</b><br/>
+          <span>${escapeHtml(`基準：${fmt(it.baseQty, 2)} ${it.baseType}`)}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildCandidates(qRaw, qN){
+    const pool = Object.values(state.masterBase).filter(b => safeText(b.alias).trim().length > 0);
+    const limit = 20;
+
+    if (!qN){
+      return pool.slice()
+        .sort((a,b) => safeText(a.alias).localeCompare(safeText(b.alias), "ja"))
+        .slice(0, limit)
+        .map(toCandidateFromBase);
+    }
+
+    const qH = kataToHira(qRaw);
+    const qNH = normalizeSearch(qH);
+    const qK = hiraToKata(qH);
+    const qNK = normalizeSearch(qK);
+
+    const scored = [];
+    for (const b of pool){
+      const alias = safeText(b.alias);
+      const yomi = safeText(b.yomi);
+      const rawName = safeText(b.rawName);
+
+      const aN = normalizeSearch(alias);
+      const yN = normalizeSearch(yomi);
+      const rN = normalizeSearch(rawName);
+
+      const aH = normalizeSearch(kataToHira(alias));
+      const yH = normalizeSearch(kataToHira(yomi));
+      const rH = normalizeSearch(kataToHira(rawName));
+
+      let score = 0;
+      const starts = (s, q) => q && s.startsWith(q);
+      const has = (s, q) => q && s.includes(q);
+
+      if (starts(aN, qN) || starts(aH, qNH) || starts(aN, qNK)) score += 120;
+      if (starts(yN, qN) || starts(yH, qNH) || starts(yN, qNK)) score += 110;
+      if (starts(rN, qN) || starts(rH, qNH) || starts(rN, qNK)) score += 80;
+
+      if (has(aN, qN) || has(aH, qNH) || has(aN, qNK)) score += 35;
+      if (has(yN, qN) || has(yH, qNH) || has(yN, qNK)) score += 30;
+      if (has(rN, qN) || has(rH, qNH) || has(rN, qNK)) score += 18;
+
+      if (score > 0) scored.push({b, score});
+    }
+
+    scored.sort((x,y) => y.score - x.score || safeText(x.b.alias).localeCompare(safeText(y.b.alias), "ja"));
+    return scored.slice(0, limit).map(x => toCandidateFromBase(x.b));
+  }
+
+  function toCandidateFromBase(b){
+    return {
+      key: b.key,
+      alias: safeText(b.alias).trim(),
+      yomi: safeText(b.yomi).trim(),
+      rawName: safeText(b.rawName).trim(),
+      baseType: b.baseType || "個",
+      baseQty: Number(b.baseQty) || 0,
+      unitCost: getUnitCost(b.key)
+    };
+  }
+
+  function selectCandidate(rowId, key){
+    const row = recipeDraft.rows.find(x => x.id === rowId);
+    const ingEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-f="ing"]`);
+    if (!row || !ingEl) return;
+
+    const b = state.masterBase[key];
+    if (!b){ toast("選択失敗", "マスターに存在しないキー"); return; }
+    if (!safeText(b.alias).trim()){ toast("選択できない", "エイリアス空白のためレシピ対象外"); return; }
+
+    row.rawKey = key;
+    row.ingText = safeText(b.alias).trim();
+    ingEl.value = row.ingText;
+    hideSuggestions(rowId);
+
+    updateRecipeRowDisplay(rowId);
+    recalcRecipe();
+    saveState();
+  }
+
+  function updateRecipeRowDisplay(rowId){
+    const row = recipeDraft.rows.find(x => x.id === rowId);
+    if (!row) return;
+
+    const b = row.rawKey ? state.masterBase[row.rawKey] : null;
+    const unit = b ? (b.baseType || "個") : "-";
+    const unitCost = row.rawKey ? getUnitCost(row.rawKey) : 0;
+    const qty = toNumber(row.qty);
+    const lineCost = (unitCost > 0 && qty > 0) ? unitCost * qty : 0;
+
+    const unitEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-role="unit"]`);
+    const unitCostEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-role="unitCost"]`);
+    const lineCostEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-role="lineCost"]`);
+    const msgEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-role="msg"]`);
+    const presetEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-role="presetBtns"]`);
+
+    if (unitEl) unitEl.textContent = unit;
+    if (lineCostEl) lineCostEl.textContent = lineCost > 0 ? yen(lineCost) : "¥0";
+    if (unitCostEl) unitCostEl.textContent = `単価：¥${fmt(unitCost,4)}/${unit}`;
+
+    if (presetEl){
+      presetEl.innerHTML = presetBtnsHtml(rowId, unit);
+      Array.from(presetEl.querySelectorAll(`[data-act="preset"]`)).forEach(btn => {
+        btn.addEventListener("click", () => {
+          const v = toNumber(btn.getAttribute("data-val"));
+          if (!(v > 0)) return;
+          row.qty = String(v);
+          const qtyEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-f="qty"]`);
+          if (qtyEl) qtyEl.value = String(v);
+          recalcRecipe();
+        });
+      });
+    }
+
+    const hasText = safeText(row.ingText).trim().length > 0;
+    const ng = (row.rawKey && !isReadyKey(row.rawKey)) ? true : false;
+
+    let msg = "";
+    let clsBad = false;
+
+    if (!hasText){
+      msg = "ここに入力（よみ/エイリアス/商品名）→候補から選択";
+    } else if (!row.rawKey){
+      msg = "候補から選ぶ（未選択）";
+    } else if (ng){
+      msg = "原価NG：Base/Priceを整えて";
+      clsBad = true;
+    } else {
+      msg = "OK";
+    }
+
+    if (msgEl){
+      msgEl.textContent = msg;
+      msgEl.classList.toggle("bad", clsBad);
+      msgEl.classList.toggle("muted", !clsBad);
+    }
+  }
+
+  function updateAllRecipeRowDisplays(){
+    for (const r of recipeDraft.rows){ updateRecipeRowDisplay(r.id); }
+  }
+
+  function recalcRecipe(){
+    let total = 0;
+    let ngCount = 0;
+
+    for (const r of recipeDraft.rows){
+      const qty = toNumber(r.qty);
+      if (!r.rawKey) continue;
+      if (!isReadyKey(r.rawKey)){ ngCount++; continue; }
+      const unitCost = getUnitCost(r.rawKey);
+      if (unitCost > 0 && qty > 0) total += unitCost * qty;
+    }
+
+    $("#kpiRecipeCost").textContent = yen(total);
+    $("#kpiRecipeWarnings").textContent = String(ngCount);
+
+    const y = toNumber(recipeDraft.yield);
+    $("#kpiRecipeCostPer").textContent = (y > 0) ? yen(total / y) : "-";
+
+    updateAllRecipeRowDisplays();
+  }
+
+  function saveRecipeDraft(){
+    const name = safeText($("#recipeName").value).trim();
+    if (!name){ toast("レシピ名が空", "名前を入れてから保存"); return; }
+
+    const unresolved = recipeDraft.rows.filter(r => {
+      const t = safeText(r.ingText).trim();
+      const q = toNumber(r.qty);
+      return t && q > 0 && !safeText(r.rawKey).trim();
+    }).length;
+    if (unresolved > 0){
+      toast("未選択の材料あり", `候補から選んでない行が ${unresolved} 件ある`);
+      return;
+    }
+
+    const rows = recipeDraft.rows
+      .map(r => ({ rawKey: r.rawKey, qty: r.qty }))
+      .filter(r => safeText(r.rawKey).trim() && toNumber(r.qty) > 0);
+
+    if (!rows.length){ toast("材料が空", "材料と使用量を入れてから保存"); return; }
+
+    const id = recipeDraft.id || cryptoId();
+    state.recipes[id] = { id, name, yield: $("#recipeYield").value, rows, updatedAt: nowIso() };
+    saveState(false);
+
+    recipeDraft.id = id;
+    recipeDraft.name = name;
+
+    renderRecipeList();
+    toast("レシピ保存", name);
+  }
+
+  function calcRecipeCost(recipe){
+    let total = 0;
+    for (const row of recipe.rows){
+      const qty = toNumber(row.qty);
+      if (!row.rawKey) continue;
+      if (!isReadyKey(row.rawKey)) continue;
+      const unitCost = getUnitCost(row.rawKey);
+      if (unitCost > 0 && qty > 0) total += unitCost * qty;
+    }
+    return total;
+  }
+
+  // ---- Bulk delete controls ----
+  const chkAllEl = $("#chkRecipeAll");
+  const btnDelSel = $("#btnDeleteSelected");
+  const btnDelAll = $("#btnDeleteAllRecipes");
+  const lblSel = $("#lblRecipeSelected");
+
+  function syncRecipeSelectionToState(){
+    state.ui.recipeSel = Array.from(recipeSelection);
+    saveState();
+  }
+
+  chkAllEl.addEventListener("change", () => {
+    const ids = Object.keys(state.recipes);
+    if (chkAllEl.checked){
+      recipeSelection = new Set(ids);
+    } else {
+      recipeSelection.clear();
+    }
+    syncRecipeSelectionToState();
+    renderRecipeList();
+  });
+
+  btnDelSel.addEventListener("click", () => {
+    const ids = Array.from(recipeSelection);
+    if (!ids.length) return;
+    if (!confirm(`選択した ${ids.length} 件を削除する？`)) return;
+    for (const id of ids){ delete state.recipes[id]; }
+    recipeSelection.clear();
+    syncRecipeSelectionToState();
+    saveState(false);
+    renderRecipeList();
+    toast("選択削除", `${ids.length}件`);
+  });
+
+  btnDelAll.addEventListener("click", () => {
+    const n = Object.keys(state.recipes).length;
+    if (!n){ toast("全削除", "レシピがない"); return; }
+    if (!confirm(`保存済みレシピを全削除する？（${n}件）`)) return;
+    if (!confirm("本当に？（最終確認）")) return;
+    state.recipes = {};
+    recipeSelection.clear();
+    syncRecipeSelectionToState();
+    saveState(false);
+    renderRecipeList();
+    toast("全削除", `${n}件`);
+  });
+
+  function updateRecipeBulkUI(total){
+    const selected = recipeSelection.size;
+    lblSel.textContent = `${selected} selected`;
+    btnDelSel.disabled = selected === 0;
+
+    if (total > 0 && selected === total){
+      chkAllEl.checked = true;
+      chkAllEl.indeterminate = false;
+    } else if (selected > 0 && selected < total){
+      chkAllEl.checked = false;
+      chkAllEl.indeterminate = true;
+    } else {
+      chkAllEl.checked = false;
+      chkAllEl.indeterminate = false;
+    }
+  }
+
+  function renderRecipeList(){
+    const list = $("#recipeList");
+    const items = Object.values(state.recipes).sort((a,b) => (b.updatedAt||"").localeCompare(a.updatedAt||""));
+
+    const idSet = new Set(items.map(x => x.id));
+    recipeSelection = new Set(Array.from(recipeSelection).filter(id => idSet.has(id)));
+    syncRecipeSelectionToState();
+
+    updateRecipeBulkUI(items.length);
+
+    if (!items.length){
+      list.innerHTML = `<div class="tiny muted">まだ保存レシピがない。左で作って「レシピ保存」。</div>`;
+      return;
+    }
+
+    list.innerHTML = items.map(r => {
+      const cost = calcRecipeCost(r);
+      const y = toNumber(r.yield);
+      const per = (y>0) ? (cost / y) : null;
+      const checked = recipeSelection.has(r.id) ? "checked" : "";
+      return `
+        <div class="item">
+          <div class="left">
+            <input class="chk" type="checkbox" data-recipe="${escapeHtmlAttr(r.id)}" data-act="sel" ${checked} />
+            <div>
+              <div class="title">${escapeHtml(r.name)}</div>
+              <div class="meta">
+                合計：<span class="mono">${yen(cost)}</span>
+                ${y>0 ? ` / 出来高 ${escapeHtml(r.yield)} → <span class="mono">${yen(per)}</span> /1` : ""}
+                <br/>更新：${escapeHtml(shortTime(r.updatedAt))}
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn small secondary" data-recipe="${escapeHtmlAttr(r.id)}" data-act="load">読み込み</button>
+            <button class="btn small danger" data-recipe="${escapeHtmlAttr(r.id)}" data-act="delete">削除</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    for (const r of items){
+      const btnLoad = document.querySelector(`[data-recipe="${cssEscape(r.id)}"][data-act="load"]`);
+      const btnDel = document.querySelector(`[data-recipe="${cssEscape(r.id)}"][data-act="delete"]`);
+      const chk = document.querySelector(`[data-recipe="${cssEscape(r.id)}"][data-act="sel"]`);
+
+      if (chk){
+        chk.addEventListener("change", () => {
+          if (chk.checked) recipeSelection.add(r.id);
+          else recipeSelection.delete(r.id);
+          syncRecipeSelectionToState();
+          updateRecipeBulkUI(items.length);
+        });
+      }
+
+      if (btnLoad){
+        btnLoad.addEventListener("click", () => loadRecipeToDraft(r.id));
+      }
+
+      if (btnDel){
+        btnDel.addEventListener("click", () => {
+          if (!confirm(`削除する？\n\n${r.name}`)) return;
+          delete state.recipes[r.id];
+          recipeSelection.delete(r.id);
+          syncRecipeSelectionToState();
+          saveState(false);
+          renderRecipeList();
+          toast("削除", r.name);
+        });
+      }
+    }
+  }
+
+  function loadRecipeToDraft(id){
+    const r = state.recipes[id];
+    if (!r) return;
+
+    recipeDraft = {
+      id: r.id,
+      name: r.name,
+      yield: r.yield,
+      rows: r.rows.map(x => {
+        const alias = getAliasForKey(x.rawKey);
+        const b = state.masterBase[x.rawKey];
+        const rawName = b ? b.rawName : x.rawKey;
+        const ingText = alias || `[未使用] ${buildAliasDefault(rawName)}`;
+        return { id: cryptoId(), rawKey: x.rawKey, ingText, qty: x.qty };
+      })
+    };
+
+    $("#recipeName").value = recipeDraft.name;
+    $("#recipeYield").value = recipeDraft.yield;
+    renderRecipeRows();
+    recalcRecipe();
+    toast("レシピ読込", r.name);
+  }
+
+  // ---- render recipe rows & bind ----
+  let recipeDocClickBound = false;
+  function renderRecipeRows(){
+    const el = $("#recipeRows");
+    el.innerHTML = recipeDraft.rows.map(r => recipeRowHtml(r)).join("");
+
+    for (const r of recipeDraft.rows){
+      const rowId = r.id;
+      const ingEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-f="ing"]`);
+      const qtyEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-f="qty"]`);
+      const delEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-act="del"]`);
+      const sugEl = document.querySelector(`[data-rid="${cssEscape(rowId)}"][data-role="suggest"]`);
+
+      if (ingEl && sugEl){
+        ingEl.addEventListener("input", () => {
+          r.ingText = ingEl.value;
+          if (!safeText(r.ingText).trim()){ r.rawKey = ""; }
+          showSuggestions(rowId);
+          updateRecipeRowDisplay(rowId);
+          recalcRecipe();
+        });
+        ingEl.addEventListener("focus", () => showSuggestions(rowId));
+        ingEl.addEventListener("blur", () => setTimeout(() => hideSuggestions(rowId), 160));
+        ingEl.addEventListener("keydown", (e) => {
+          if (!isSuggestOpen(rowId)) return;
+          const list = getSuggestState(rowId).items;
+          if (!list.length) return;
+
+          if (e.key === "ArrowDown"){ e.preventDefault(); moveSuggest(rowId, +1); }
+          else if (e.key === "ArrowUp"){ e.preventDefault(); moveSuggest(rowId, -1); }
+          else if (e.key === "Enter"){
+            e.preventDefault();
+            const st = getSuggestState(rowId);
+            const item = st.items[st.activeIndex] || st.items[0];
+            if (item) selectCandidate(rowId, item.key);
+          } else if (e.key === "Escape"){ hideSuggestions(rowId); }
+        });
+      }
+
+      if (qtyEl){
+        qtyEl.addEventListener("input", () => {
+          r.qty = qtyEl.value;
+          updateRecipeRowDisplay(rowId);
+          recalcRecipe();
+        });
+      }
+
+      if (delEl){
+        delEl.addEventListener("click", () => {
+          recipeDraft.rows = recipeDraft.rows.filter(x => x.id !== rowId);
+          if (!recipeDraft.rows.length) addRecipeRow();
+          renderRecipeRows();
+          recalcRecipe();
+        });
+      }
+    }
+
+    if (!recipeDocClickBound){
+      recipeDocClickBound = true;
+      document.addEventListener("click", (e) => {
+        if (state.ui.lastTab !== "recipe") return;
+        const t = e.target;
+        if (t && t.closest && (t.closest(".acWrap") || t.closest(".suggest"))) return;
+        for (const row of recipeDraft.rows){ hideSuggestions(row.id); }
+      }, {capture:true});
+    }
+  }
+
+  // ---------- Data (Export/Import) ----------
+  $("#btnExportAll").addEventListener("click", () => {
+    const defaultName = `cost_recipe_all_v0_6_${dateTag()}.json`;
+    const fn = askFilename(defaultName);
+    if (!fn) return;
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+    downloadBlob(blob, fn);
+    toast("全データJSON出力", fn);
+  });
+
+  $("#btnCopyAll").addEventListener("click", async () => {
+    const ta = $("#importJsonArea");
+    ta.select();
+    try{
+      await navigator.clipboard.writeText(ta.value);
+      toast("コピーした", "クリップボードへ");
+    } catch(e){
+      toast("コピー失敗", "ブラウザの制限っぽい。手でコピーして。");
+    }
+  });
+
+  $("#btnClearImportArea").addEventListener("click", () => {
+    $("#importJsonArea").value = "";
+    toast("クリア", "貼り付けエリアを空にした");
+  });
+
+  $("#btnImportAll").addEventListener("click", () => {
+    const s = $("#importJsonArea").value;
+    if (!safeText(s).trim()){
+      toast("空っぽ", "JSONを貼ってから");
+      return;
+    }
+    importAllFromString(s, "貼り付け");
+  });
+
+  $("#btnWipeAll").addEventListener("click", () => {
+    if (!confirm("全データ初期化する？（元に戻せない）")) return;
+    if (!confirm("本当に？（最終確認）")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+  });
+
+  const dropZone = $("#jsonDropZone");
+  const jsonFileInput = $("#jsonFileInput");
+
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("over");
+  });
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("over"));
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("over");
+    const file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+    if (file) importJsonFile(file);
+  });
+
+  jsonFileInput.addEventListener("change", () => {
+    const file = jsonFileInput.files && jsonFileInput.files[0] ? jsonFileInput.files[0] : null;
+    if (file) importJsonFile(file);
+    jsonFileInput.value = "";
+  });
+
+  async function importJsonFile(file){
+    try{
+      const text = await readFileAsText(file);
+      $("#importJsonArea").value = text;
+      importAllFromString(text, `ファイル：${file.name}`);
+    } catch(e){
+      console.error(e);
+      toast("ファイル読込失敗", String(e && e.message ? e.message : e));
+    }
+  }
+
+  function readFileAsText(file){
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onerror = () => reject(fr.error || new Error("FileReader error"));
+      fr.onload = () => resolve(String(fr.result || ""));
+      fr.readAsText(file, "UTF-8");
+    });
+  }
+
+  function mergePricePreferCurrent(currentPrice, importedPrice){
+    const out = deepClone(importedPrice || {});
+    const cur = currentPrice || {};
+    for (const k of Object.keys(cur)){
+      const c = cur[k] || {};
+      const hasCurrent = Number(c.unitPrice) > 0 || safeText(c.priceUnit).trim() || safeText(c.spec).trim();
+      if (hasCurrent) out[k] = c;
+      else if (!out[k]) out[k] = c;
+    }
+    return out;
+  }
+
+  function importAllFromString(s, sourceLabel){
+    try{
+      const obj = JSON.parse(s);
+      if (!obj || typeof obj !== "object") throw new Error("JSON形式がおかしい");
+
+      const hasRecipes = !!obj.recipes;
+      const hasBase = !!obj.masterBase || !!obj.master;
+      if (!hasRecipes || !hasBase) throw new Error("必要なキー(masterBase or master / recipes)が見つからない");
+
+      const imported = migrate(obj);
+
+      const msg =
+        `このJSONでインポートする？（Base/レシピ/設定は上書き）\n\n` +
+        `ソース：${sourceLabel}\n` +
+        `Base件数：${Object.keys(imported.masterBase||{}).length}\n` +
+        `Price件数：${Object.keys(imported.masterPrice||{}).length}\n` +
+        `recipes件数：${Object.keys(imported.recipes||{}).length}\n\n` +
+        `※仕様：端末にあるPrice（最新CSV）を優先保持します`;
+      if (!confirm(msg)) return;
+
+      const currentPrice = deepClone(state.masterPrice || {});
+      Object.assign(state, imported);
+
+      state.masterPrice = mergePricePreferCurrent(currentPrice, state.masterPrice);
+
+      for (const k of Object.keys(state.masterPrice || {})){
+        if (!state.masterBase[k]){
+          state.masterBase[k] = {
+            key: k, rawName: k, alias:"", yomi:"",
+            baseType:"個", baseQty:1, baseTypeAuto:"個", baseQtyAuto:1, multAuto:1,
+            baseQtyManual:false, note:"", updatedAt: nowIso()
+          };
+        }
+      }
+
+      saveState(false);
+
+      recipeDraft = { id:null, name:"", yield:"", rows:[] };
+      recipeSelection = new Set(Array.isArray(state.ui.recipeSel) ? state.ui.recipeSel : []);
+
+      renderImportKPIs();
+      renderMaster();
+      renderRecipe();
+      renderData();
+      toast("インポート完了", sourceLabel);
+    } catch(e){
+      console.error(e);
+      toast("インポート失敗", String(e && e.message ? e.message : e));
+    }
+  }
+
+  // ---------- Settings ----------
+  $("#btnSaveCfg").addEventListener("click", () => {
+    state.cfg.colName = $("#cfgColName").value;
+    state.cfg.colPrice = $("#cfgColPrice").value;
+    state.cfg.colSpec = $("#cfgColSpec").value;
+    state.cfg.colUnit = $("#cfgColUnit").value;
+    saveState(false);
+    toast("設定保存", "次回CSV取り込みから反映");
+  });
+
+  $("#btnResetCfg").addEventListener("click", () => {
+    if (!confirm("設定をリセットする？")) return;
+    state.cfg = { colName:"", colPrice:"", colSpec:"", colUnit:"" };
+    saveState(false);
+    renderData();
+    toast("設定リセット", "自動検出に戻した");
+  });
+
+  function renderData(){
+    $("#cfgColName").value = safeText(state.cfg.colName);
+    $("#cfgColPrice").value = safeText(state.cfg.colPrice);
+    $("#cfgColSpec").value = safeText(state.cfg.colSpec);
+    $("#cfgColUnit").value = safeText(state.cfg.colUnit);
+  }
+
+  // ---------- Boot ----------
+  function boot(){
+    renderData();
+    renderImportKPIs();
+    recipeDraft = { id:null, name:"", yield:"", rows:[] };
+    setTab(state.ui.lastTab || "import");
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
