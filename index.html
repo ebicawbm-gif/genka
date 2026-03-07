@@ -272,20 +272,28 @@
     }
 
     .acWrap{position:relative;}
-    .suggest{
-      position:absolute;
-      left:0; right:0;
-      top:44px;
-      border:1px solid rgba(33,48,74,.9);
-      background:rgba(16,24,38,.98);
-      border-radius:12px;
-      box-shadow:var(--shadow);
-      max-height:260px;
-      overflow:auto;
-      display:none;
-      z-index:30;
-    }
+.suggest{
+  position:absolute;
+  top:0;
+  left:calc(100% + 12px);
+  width:360px;
+  border:1px solid rgba(33,48,74,.9);
+  background:rgba(16,24,38,.98);
+  border-radius:12px;
+  box-shadow:var(--shadow);
+  max-height:260px;
+  overflow:auto;
+  display:none;
+  z-index:80;
+}
     .suggest.show{display:block;}
+@media (max-width:1200px){
+  .suggest{
+    top:48px;
+    left:0;
+    width:100%;
+  }
+}
     .opt{
       padding:9px 10px;
       border-top:1px solid rgba(33,48,74,.55);
@@ -2596,9 +2604,12 @@ function normalizeSearch(s){
       </tr>
     `;
   }
+function createEmptyRecipeDraft(){
+  return { id:null, name:"", yield:"1", rows:[] };
+}
 
   // ---------------- Recipe ----------------
-  let recipeDraft = { id:null, name:"", yield:"", rows:[] };
+  let recipeDraft = createEmptyRecipeDraft();
   let recipeSelection = new Set(Array.isArray(state.ui.recipeSel) ? state.ui.recipeSel : []);
 
   $("#btnAddRow").addEventListener("click", () => { addRecipeRow(); renderRecipeRows(); recalcRecipe(); });
@@ -3266,18 +3277,19 @@ function normalizeSearch(s){
       newName = `${src.name}（コピー${i}）`;
     }
 
-    const newId = cryptoId();
-    state.recipes[newId] = {
-      id: newId,
-      name: newName,
-      yield: safeText(src.yield),
-      rows: Array.isArray(src.rows) ? src.rows.map(x => ({ rawKey: x.rawKey, qty: x.qty })) : [],
-      updatedAt: nowIso()
-    };
-    saveState(false);
-    renderRecipeList();
-    renderSales();
-    toast("レシピ複製", newName);
+const newId = cryptoId();
+state.recipes[newId] = {
+  id: newId,
+  name: newName,
+  yield: safeText(src.yield).trim() || "1",
+  rows: Array.isArray(src.rows) ? src.rows.map(x => ({ rawKey: x.rawKey, qty: x.qty })) : [],
+  updatedAt: nowIso()
+};
+saveState(false);
+renderRecipeList();
+renderSales();
+loadRecipeToDraft(newId);
+toast("レシピ複製して読込", newName);
   }
 
   function loadRecipeToDraft(id){
@@ -3287,7 +3299,7 @@ function normalizeSearch(s){
     recipeDraft = {
       id: r.id,
       name: r.name,
-      yield: r.yield,
+      yield: safeText(r.yield).trim() || "1",
       rows: r.rows.map(x => {
         const alias = getAliasForKey(x.rawKey);
         const b = state.masterBase[x.rawKey];
@@ -4503,7 +4515,7 @@ setTextIfExists("#salesSelectedCountInfo", String(selectedVisible));
 
       saveState(false);
 
-      recipeDraft = { id:null, name:"", yield:"", rows:[] };
+      recipeDraft = createEmptyRecipeDraft();
       recipeSelection = new Set(Array.isArray(state.ui.recipeSel) ? state.ui.recipeSel : []);
       salesMenuSelection = new Set(Array.isArray(state.ui.salesMenuSel) ? state.ui.salesMenuSel : []);
 
@@ -4587,7 +4599,7 @@ state.salesCfg = {
     renderData();
     renderImportKPIs();
 
-    recipeDraft = { id:null, name:"", yield:"", rows:[] };
+    recipeDraft = createEmptyRecipeDraft();
     recipeSelection = new Set(Array.isArray(state.ui.recipeSel) ? state.ui.recipeSel : []);
     salesMenuSelection = new Set(Array.isArray(state.ui.salesMenuSel) ? state.ui.salesMenuSel : []);
     if (chkShowHiddenSalesEl){
