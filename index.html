@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>棚卸CSV → 原価マスター＆レシピ原価（Ver0.6）</title>
+  <title>棚卸CSV → 原価マスター＆レシピ原価（Ver0.9）</title>
   <style>
     :root{
       --bg:#0b0f14;
@@ -26,9 +26,10 @@
     body{
       margin:0;
       font-family:var(--sans);
-      background: radial-gradient(1200px 700px at 20% -10%, rgba(105,167,255,.22), transparent 50%),
-                  radial-gradient(900px 600px at 100% 0%, rgba(56,211,159,.18), transparent 55%),
-                  var(--bg);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(105,167,255,.22), transparent 50%),
+        radial-gradient(900px 600px at 100% 0%, rgba(56,211,159,.18), transparent 55%),
+        var(--bg);
       color:var(--text);
     }
     header{
@@ -37,7 +38,7 @@
       background: rgba(11,15,20,.65);
       border-bottom:1px solid rgba(33,48,74,.7);
     }
-    .wrap{max-width:1200px; margin:0 auto; padding:14px 14px;}
+    .wrap{max-width:1320px; margin:0 auto; padding:14px;}
     .top{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;}
     .brand{display:flex; gap:12px; align-items:center;}
     .logo{
@@ -51,15 +52,15 @@
     .tab{
       border:1px solid rgba(33,48,74,.8);
       background: rgba(16,24,38,.7);
-      color: var(--text);
+      color:var(--text);
       padding:10px 12px;
-      border-radius: 999px;
+      border-radius:999px;
       cursor:pointer;
       font-size:13px;
-      transition: .15s transform, .15s background, .15s border-color;
+      transition:.15s transform, .15s background, .15s border-color;
       user-select:none;
     }
-    .tab:hover{transform: translateY(-1px); border-color: rgba(105,167,255,.7)}
+    .tab:hover{transform:translateY(-1px); border-color:rgba(105,167,255,.7)}
     .tab.active{
       background: rgba(105,167,255,.14);
       border-color: rgba(105,167,255,.9);
@@ -67,13 +68,14 @@
     }
 
     main{padding:18px 0 80px;}
-    .grid{display:grid; grid-template-columns: 1.2fr .8fr; gap:14px;}
-    @media (max-width: 980px){ .grid{grid-template-columns: 1fr;} }
+    .grid{display:grid; grid-template-columns:1.2fr .8fr; gap:14px;}
+    @media (max-width:980px){ .grid{grid-template-columns:1fr;} }
+
     .card{
       background: linear-gradient(180deg, rgba(16,24,38,.88), rgba(15,23,35,.85));
       border:1px solid rgba(33,48,74,.85);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
       overflow:hidden;
     }
     .card .hd{
@@ -84,37 +86,40 @@
     .card .hd h2{margin:0; font-size:14px}
     .card .hd .hint{color:var(--muted); font-size:12px; line-height:1.45}
     .card .bd{padding:14px}
+
     .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
-    .row > *{flex: 0 0 auto;}
+    .row > *{flex:0 0 auto;}
     .row .grow{flex:1 1 260px}
+
     label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
     input[type="text"], input[type="number"], select, textarea{
       width:100%;
       padding:10px 11px;
-      border-radius: 12px;
+      border-radius:12px;
       border:1px solid rgba(33,48,74,.9);
       background: rgba(8,12,18,.65);
-      color: var(--text);
+      color:var(--text);
       outline:none;
     }
     textarea{min-height:90px; resize:vertical}
     input[type="file"]{color:var(--muted)}
+
     .btn{
       border:1px solid rgba(33,48,74,.9);
       background: rgba(105,167,255,.14);
-      color: var(--text);
+      color:var(--text);
       padding:10px 12px;
-      border-radius: 12px;
+      border-radius:12px;
       cursor:pointer;
       font-weight:600;
-      transition: .15s transform, .15s background, .15s border-color, .15s opacity;
+      transition:.15s transform, .15s background, .15s border-color, .15s opacity;
       user-select:none;
     }
-    .btn:hover{transform: translateY(-1px); border-color: rgba(105,167,255,.9)}
-    .btn:active{transform: translateY(0px); opacity:.95}
-    .btn.secondary{background: rgba(255,255,255,.06)}
-    .btn.danger{background: rgba(255,107,107,.12); border-color: rgba(255,107,107,.45)}
-    .btn.good{background: rgba(56,211,159,.12); border-color: rgba(56,211,159,.55)}
+    .btn:hover{transform:translateY(-1px); border-color:rgba(105,167,255,.9)}
+    .btn:active{transform:translateY(0); opacity:.95}
+    .btn.secondary{background:rgba(255,255,255,.06)}
+    .btn.danger{background:rgba(255,107,107,.12); border-color:rgba(255,107,107,.45)}
+    .btn.good{background:rgba(56,211,159,.12); border-color:rgba(56,211,159,.55)}
     .btn.small{padding:7px 10px; border-radius:10px; font-size:12px}
     .btn:disabled{opacity:.45; cursor:not-allowed; transform:none;}
 
@@ -122,36 +127,57 @@
       display:inline-flex; align-items:center; gap:8px;
       padding:8px 10px;
       border:1px solid rgba(33,48,74,.9);
-      border-radius: 999px;
+      border-radius:999px;
       background: rgba(255,255,255,.05);
       color:var(--muted);
       font-size:12px;
     }
+
     .mono{font-family:var(--mono)}
-    .kpi{display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;}
-    @media (max-width: 680px){ .kpi{grid-template-columns:1fr;} }
-    .kpi .box{
-      padding:12px;
-      border-radius: 14px;
-      border:1px solid rgba(33,48,74,.85);
-      background: rgba(255,255,255,.04);
+    .muted{color:var(--muted)}
+    .tiny{font-size:11px; color:var(--muted)}
+    .bad{color:var(--bad)}
+    .goodText{color:var(--good)}
+    .warn{color:var(--warn)}
+    .right{text-align:right}
+    .nowrap{white-space:nowrap}
+    .hr{height:1px; background:rgba(33,48,74,.8); margin:14px 0}
+
+    .kpi{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;}
+    .kpi4{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;}
+    .kpi5{display:grid; grid-template-columns:repeat(5, 1fr); gap:10px;}
+    @media (max-width:1100px){
+      .kpi4{grid-template-columns:1fr 1fr;}
+      .kpi5{grid-template-columns:1fr 1fr;}
     }
-    .kpi .big{font-size:18px; font-weight:800}
-    .kpi .lbl{font-size:12px; color:var(--muted); margin-top:4px}
+    @media (max-width:900px){
+      .kpi{grid-template-columns:1fr;}
+    }
+    @media (max-width:560px){
+      .kpi4,.kpi5{grid-template-columns:1fr;}
+    }
+    .kpi .box, .kpi4 .box, .kpi5 .box{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(33,48,74,.85);
+      background:rgba(255,255,255,.04);
+    }
+    .kpi .big, .kpi4 .big, .kpi5 .big{font-size:18px; font-weight:800}
+    .kpi .lbl, .kpi4 .lbl, .kpi5 .lbl{font-size:12px; color:var(--muted); margin-top:4px}
 
     .tableWrap{
       overflow:auto;
-      border-radius: 14px;
+      border-radius:14px;
       border:1px solid rgba(33,48,74,.85);
       background: rgba(8,12,18,.4);
     }
-    table{width:100%; border-collapse: collapse; min-width: 1120px;}
+    table{width:100%; border-collapse:collapse; min-width:1120px;}
     thead th{
       position:sticky; top:0;
       background: rgba(16,24,38,.96);
       border-bottom:1px solid rgba(33,48,74,.85);
       font-size:12px;
-      color: var(--muted);
+      color:var(--muted);
       text-align:left;
       padding:10px 10px;
       white-space:nowrap;
@@ -160,47 +186,43 @@
     tbody td{
       border-top:1px solid rgba(33,48,74,.55);
       padding:8px 10px;
-      vertical-align: top;
+      vertical-align:top;
       font-size:13px;
     }
-    tbody tr:hover{background: rgba(105,167,255,.06)}
-    .tiny{font-size:11px; color:var(--muted)}
-    .bad{color: var(--bad)}
-    .goodText{color: var(--good)}
-    .warn{color: var(--warn)}
-    .right{text-align:right}
-    .nowrap{white-space:nowrap}
-    .muted{color:var(--muted)}
-    .hr{height:1px; background: rgba(33,48,74,.8); margin:14px 0}
+    tbody tr:hover{background:rgba(105,167,255,.06)}
+    tbody tr.isHiddenRow{opacity:.45}
+
     .tag{
       display:inline-flex; align-items:center; justify-content:center;
       padding:4px 8px;
       font-size:11px;
-      border-radius: 999px;
+      border-radius:999px;
       border:1px solid rgba(33,48,74,.85);
-      background: rgba(255,255,255,.04);
-      color: var(--muted);
-      white-space: nowrap;
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      white-space:nowrap;
     }
-    .tag.bad{border-color: rgba(255,107,107,.5); background: rgba(255,107,107,.10); color: #ffd0d0}
-    .tag.good{border-color: rgba(56,211,159,.55); background: rgba(56,211,159,.12); color: #c9ffea}
-    .split{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
-    @media (max-width: 760px){ .split{grid-template-columns:1fr;} }
+    .tag.bad{border-color:rgba(255,107,107,.5); background:rgba(255,107,107,.10); color:#ffd0d0}
+    .tag.good{border-color:rgba(56,211,159,.55); background:rgba(56,211,159,.12); color:#c9ffea}
+    .tag.warn{border-color:rgba(255,204,102,.55); background:rgba(255,204,102,.12); color:#ffe5a4}
+
+    .split{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    @media (max-width:760px){ .split{grid-template-columns:1fr;} }
 
     .recipeRows{display:flex; flex-direction:column; gap:10px;}
     .rrow{
       display:grid;
-      grid-template-columns: 1.2fr .55fr .35fr .5fr .15fr;
+      grid-template-columns:1.2fr .55fr .35fr .5fr .15fr;
       gap:10px;
       align-items:end;
       padding:10px;
-      border-radius: 14px;
+      border-radius:14px;
       border:1px solid rgba(33,48,74,.85);
-      background: rgba(255,255,255,.03);
+      background:rgba(255,255,255,.03);
     }
-    @media (max-width: 980px){
+    @media (max-width:980px){
       .rrow{grid-template-columns:1fr 1fr;}
-      .rrow .span2{grid-column: span 2}
+      .rrow .span2{grid-column:span 2}
     }
 
     .footActions{
@@ -210,61 +232,60 @@
     .list{display:flex; flex-direction:column; gap:10px;}
     .item{
       padding:12px;
-      border-radius: 14px;
+      border-radius:14px;
       border:1px solid rgba(33,48,74,.85);
-      background: rgba(255,255,255,.03);
+      background:rgba(255,255,255,.03);
       display:flex; gap:10px; justify-content:space-between; align-items:flex-start; flex-wrap:wrap;
     }
     .item .title{font-weight:800}
     .item .meta{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.45}
     .item .left{display:flex; gap:10px; align-items:flex-start;}
-    .chk{margin-top:4px; transform: scale(1.05);}
+    .chk{margin-top:4px; transform:scale(1.05);}
 
     .toast{
-      position: fixed;
-      left: 14px; right: 14px;
-      bottom: 16px;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(33,48,74,.85);
-      background: rgba(16,24,38,.92);
-      box-shadow: var(--shadow);
+      position:fixed;
+      left:14px; right:14px;
+      bottom:16px;
+      max-width:1100px;
+      margin:0 auto;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(33,48,74,.85);
+      background:rgba(16,24,38,.92);
+      box-shadow:var(--shadow);
       display:none;
-      z-index: 999;
+      z-index:999;
     }
     .toast.show{display:block;}
     .toast .t1{font-weight:800}
     .toast .t2{font-size:12px; color:var(--muted); margin-top:4px}
 
     .kbd{
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 2px 6px;
-      border-radius: 7px;
-      border: 1px solid rgba(33,48,74,.85);
-      background: rgba(255,255,255,.06);
-      color: var(--muted);
-      white-space: nowrap;
+      font-family:var(--mono);
+      font-size:11px;
+      padding:2px 6px;
+      border-radius:7px;
+      border:1px solid rgba(33,48,74,.85);
+      background:rgba(255,255,255,.06);
+      color:var(--muted);
+      white-space:nowrap;
     }
 
-    /* --- Autocomplete --- */
-    .acWrap{ position:relative; }
+    .acWrap{position:relative;}
     .suggest{
       position:absolute;
       left:0; right:0;
-      top: 44px;
+      top:44px;
       border:1px solid rgba(33,48,74,.9);
-      background: rgba(16,24,38,.98);
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-      max-height: 260px;
+      background:rgba(16,24,38,.98);
+      border-radius:12px;
+      box-shadow:var(--shadow);
+      max-height:260px;
       overflow:auto;
       display:none;
-      z-index: 30;
+      z-index:30;
     }
-    .suggest.show{ display:block; }
+    .suggest.show{display:block;}
     .opt{
       padding:9px 10px;
       border-top:1px solid rgba(33,48,74,.55);
@@ -274,26 +295,25 @@
       justify-content:space-between;
       align-items:flex-start;
     }
-    .opt:first-child{ border-top:none; }
-    .opt:hover{ background: rgba(105,167,255,.10); }
-    .opt.active{ background: rgba(105,167,255,.16); }
-    .opt .l1{ font-weight:800; }
-    .opt .l2{ font-size:11px; color: var(--muted); margin-top:3px; line-height:1.4; }
+    .opt:first-child{border-top:none;}
+    .opt:hover{background:rgba(105,167,255,.10);}
+    .opt.active{background:rgba(105,167,255,.16);}
+    .opt .l1{font-weight:800;}
+    .opt .l2{font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4;}
     .opt .r{
       text-align:right;
-      min-width: 120px;
-      color: var(--muted);
-      font-size: 11px;
-      white-space: nowrap;
+      min-width:120px;
+      color:var(--muted);
+      font-size:11px;
+      white-space:nowrap;
     }
-    .opt .r b{ color: var(--text); font-size: 12px; }
+    .opt .r b{color:var(--text); font-size:12px;}
 
-    /* --- Drag&Drop Import --- */
     .dropZone{
-      border: 1px dashed rgba(105,167,255,.65);
-      background: rgba(105,167,255,.06);
-      border-radius: 14px;
-      padding: 14px;
+      border:1px dashed rgba(105,167,255,.65);
+      background:rgba(105,167,255,.06);
+      border-radius:14px;
+      padding:14px;
       display:flex;
       gap:12px;
       align-items:center;
@@ -301,13 +321,13 @@
       flex-wrap:wrap;
     }
     .dropZone.over{
-      border-color: rgba(56,211,159,.85);
-      background: rgba(56,211,159,.08);
-      box-shadow: 0 0 0 3px rgba(56,211,159,.12);
+      border-color:rgba(56,211,159,.85);
+      background:rgba(56,211,159,.08);
+      box-shadow:0 0 0 3px rgba(56,211,159,.12);
     }
     .dzTitle{font-weight:900}
     .dzSub{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.45}
-    .dzLeft{min-width:260px; flex: 1 1 320px;}
+    .dzLeft{min-width:260px; flex:1 1 320px;}
     .dzRight{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
     .fileBtn{
       position:relative;
@@ -322,33 +342,33 @@
       cursor:pointer;
     }
 
-    /* --- qty presets --- */
     .presetBar{
       display:flex; flex-wrap:wrap; gap:6px;
       margin-top:6px;
     }
     .chip{
       border:1px solid rgba(33,48,74,.9);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
       padding:6px 8px;
-      border-radius: 999px;
+      border-radius:999px;
       cursor:pointer;
       font-size:12px;
       line-height:1;
       user-select:none;
     }
-    .chip:hover{border-color: rgba(105,167,255,.9); transform: translateY(-1px);}
-    .chip:active{transform: translateY(0px); opacity:.95}
+    .chip:hover{border-color:rgba(105,167,255,.9); transform:translateY(-1px);}
+    .chip:active{transform:translateY(0); opacity:.95}
+
     .presetList{
       display:flex; flex-direction:column; gap:10px;
       margin-top:10px;
     }
     .presetItem{
       padding:10px;
-      border-radius: 14px;
+      border-radius:14px;
       border:1px solid rgba(33,48,74,.85);
-      background: rgba(255,255,255,.03);
+      background:rgba(255,255,255,.03);
       display:flex; gap:10px; justify-content:space-between; align-items:flex-start; flex-wrap:wrap;
     }
     .presetItem .name{font-weight:900}
@@ -357,7 +377,102 @@
       display:inline-flex; align-items:center; gap:8px;
       user-select:none;
     }
-    .inlineChk input{transform: scale(1.1);}
+    .inlineChk input{transform:scale(1.1);}
+
+    .salesToolbar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
+    }
+    .salesFilters{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;
+    }
+    .salesSummaryGrid{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:10px;
+      margin-top:12px;
+    }
+    @media (max-width:900px){
+      .salesSummaryGrid{grid-template-columns:1fr;}
+    }
+    .summaryBox{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(33,48,74,.85);
+      background:rgba(255,255,255,.04);
+    }
+    .summaryBox .ttl{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+    .summaryLine{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:4px 0;
+      font-size:13px;
+    }
+    .summaryLine .v{
+      font-family:var(--mono);
+      font-weight:700;
+    }
+
+    .hideTools{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    }
+    .checkList{
+      display:flex; flex-direction:column; gap:8px;
+      max-height:280px;
+      overflow:auto;
+      padding-right:4px;
+    }
+    .checkItem{
+      display:flex; gap:10px; align-items:flex-start;
+      padding:10px;
+      border-radius:12px;
+      border:1px solid rgba(33,48,74,.85);
+      background:rgba(255,255,255,.03);
+    }
+    .checkItem .name{font-weight:700}
+    .checkItem .meta{font-size:11px; color:var(--muted); margin-top:4px; line-height:1.45}
+    .salesMenuName{
+      font-weight:800;
+      line-height:1.45;
+      word-break:break-word;
+    }
+    .salesMenuSub{
+      font-size:11px;
+      color:var(--muted);
+      margin-top:4px;
+      line-height:1.4;
+      word-break:break-all;
+    }
+    .salesTypeWrap{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:flex-start;
+    }
+    .salesStateWrap{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:flex-start;
+    }
+    .salesActionWrap{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      align-items:flex-start;
+    }
+    .hiddenMenuBox{
+      margin-top:12px;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(33,48,74,.85);
+      background:rgba(255,255,255,.03);
+    }
   </style>
 </head>
 <body>
@@ -367,14 +482,15 @@
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
-          <h1>棚卸CSV → 原価マスター＆レシピ原価 <span class="tag mono">Ver0.6</span></h1>
-          <div class="sub">Ver0.6：マスター入力時に「全再描画しない」＝スクロールが吹っ飛ばない（行だけ表示更新）</div>
+          <h1>棚卸CSV → 原価マスター＆レシピ原価 <span class="tag mono">Ver0.9</span></h1>
+          <div class="sub">Ver0.9：salesタブ重点改修（カテゴリ順維持 / 複数非表示 / 飲み放題集計 / 単品集計 / 合算原価率）</div>
         </div>
       </div>
       <nav>
         <button class="tab active" data-tab="import">① CSV取込</button>
         <button class="tab" data-tab="master">② 原価マスター</button>
         <button class="tab" data-tab="recipe">③ レシピ原価</button>
+        <button class="tab" data-tab="sales">④ 売上原価</button>
         <button class="tab" data-tab="data">データ管理</button>
       </nav>
     </div>
@@ -394,7 +510,7 @@
                 ・棚卸表CSVの <span class="kbd">商品名 / 単価 / 規格(入数) / 単位</span> を吸い上げます。<br/>
                 ・日本の会計/棚卸エクスポートは <b>Shift_JIS</b> が多いので、まずはShift_JISで読んでください。<br/>
                 ・レシピ候補は <b>エイリアスが入ってるものだけ</b>（エイリアス空白＝使わない）<br/>
-                ・Ver0.5〜：CSVは <b>Price層</b>（単価/規格/単位）に反映。レシピは固定のまま原価だけ更新される。
+                ・CSVは <b>Price層</b>（単価/規格/単位）に反映。レシピは固定のまま原価だけ更新される。
               </div>
             </div>
             <div class="pill">
@@ -407,7 +523,7 @@
                 <label>CSVファイル</label>
                 <input id="csvFile" type="file" accept=".csv,text/csv" />
                 <div class="tiny" style="margin-top:6px;">
-                  ※iPadでもOK。ファイルを選ぶだけ。読み込んだらこのページは閉じてもデータ残る（同じ端末/同じブラウザ）。
+                  ※iPadでもOK。読み込んだらこのページは閉じてもデータ残る（同じ端末/同じブラウザ）。
                 </div>
               </div>
               <div>
@@ -418,6 +534,25 @@
                   <option value="UTF-8-SIG">UTF-8（BOMあり）</option>
                 </select>
                 <div class="tiny" style="margin-top:6px;">文字化けしたらUTF-8側を試して。</div>
+              </div>
+            </div>
+
+            <div class="hr"></div>
+
+            <div class="dropZone" id="csvDropZone">
+              <div class="dzLeft">
+                <div class="dzTitle">ここにCSVファイルをドロップ</div>
+                <div class="dzSub">
+                  ドロップだけで棚卸CSVを読み込みできます。<br/>
+                  文字コードと取り込みモードは下の設定を使います。
+                </div>
+              </div>
+              <div class="dzRight">
+                <span class="tiny muted">または</span>
+                <span class="btn small secondary fileBtn">
+                  CSVファイル選択
+                  <input id="csvDropInput" type="file" accept=".csv,text/csv" />
+                </span>
               </div>
             </div>
 
@@ -457,12 +592,17 @@
             <div class="hr"></div>
 
             <details>
-              <summary class="muted" style="cursor:pointer;">このVer0.6の前提（仕様）</summary>
-              <div class="tiny" style="margin-top:10px; line-height:1.65;">
+              <summary class="muted" style="cursor:pointer;">このVer0.9の前提（仕様）</summary>
+              <div class="tiny" style="margin-top:10px; line-height:1.7;">
                 ・Base（固定）：エイリアス/よみ/基準量/メモ/手入力フラグ など。<br/>
                 ・Price（棚卸）：単価/規格/単位 など（CSV取り込みで更新）。<br/>
-                ・JSONバックアップは「Base+レシピ+設定+プリセット」を主役として扱い、<b>インポート時は端末にあるPrice（最新CSV）を優先して保持</b>。<br/>
-                ・Ver0.6：マスター画面の入力で全再描画しない（スクロール飛び対策）。
+                ・salesタブは <b>xlsxの並び順を維持</b>。売上順には並べ替えません。<br/>
+                ・売価0かつ出数ありのうち、<b>先頭F</b>は飲み放題メニューとして残します。<br/>
+                ・メニューを <b>複数選択で非表示</b> できます。<br/>
+                ・「〇〇飲み放題」で終わる売上行を合算し、その期間の飲み放題売上として集計します。<br/>
+                ・F始まり売価0メニューは飲み放題使用分として原価計算します。<br/>
+                ・単品ドリンクは紐づいたレシピの1杯原価 × 出数で計算します。<br/>
+                ・飲み放題 / 単品 / 合算 の3パターンで見込み原価と原価率を表示します。
               </div>
             </details>
           </div>
@@ -479,6 +619,7 @@
             <div class="row">
               <button class="btn secondary" id="btnGoMaster">原価マスターへ</button>
               <button class="btn secondary" id="btnGoRecipe">レシピへ</button>
+              <button class="btn secondary" id="btnGoSales">売上原価へ</button>
             </div>
             <div class="hr"></div>
             <div class="row">
@@ -501,29 +642,28 @@
             <h2>原価マスター（Base×Price → 1g/1ml/1個の原価）</h2>
             <div class="hint">
               Base（固定）を整えるとレシピ入力が爆速。Price（棚卸）はCSVで更新される想定。<br/>
-              <b>エイリアス空白＝レシピ候補に出さない</b>（単品ボトル等の除外に使う）。<br/>
-              <b>Ver0.6：</b>入力中にスクロールが飛ばない（行だけ表示更新）。
+              <b>エイリアス空白＝レシピ候補に出さない</b>。入力中にスクロールが飛ばない（行だけ表示更新）。
             </div>
           </div>
           <div class="row">
             <div style="min-width:240px;">
               <label>検索（商品名/エイリアス/よみ）</label>
-              <input id="masterSearch" type="text" placeholder="例：ぞっと / ZOT / オレンジ / がむしろ など" />
+              <input id="masterSearch" type="text" placeholder="例：ぞっと / ZOT / オレンジ / がむしろ" />
             </div>
             <div style="min-width:180px;">
               <label>フィルタ</label>
               <select id="masterFilter">
                 <option value="all" selected>全件</option>
-                <option value="missingAlias">エイリアス未登録（=レシピに出ない）</option>
-                <option value="missingCost">原価NG（Base/Price不足）</option>
+                <option value="missingAlias">エイリアス未登録</option>
+                <option value="missingCost">原価NG</option>
                 <option value="ready">原価OK</option>
               </select>
             </div>
             <div style="min-width:240px;">
               <label>一括</label>
               <div class="row">
-                <button class="btn small secondary" id="btnMasterExportCsv">マスターCSV出力（結合）</button>
-                <button class="btn small secondary" id="btnMasterExportJson">マスターJSON出力（結合・ファイル名指定）</button>
+                <button class="btn small secondary" id="btnMasterExportCsv">マスターCSV出力</button>
+                <button class="btn small secondary" id="btnMasterExportJson">マスターJSON出力</button>
               </div>
             </div>
           </div>
@@ -555,11 +695,11 @@
           <div class="row" style="justify-content:space-between;">
             <div class="tiny">
               <span class="tag good">OK</span> = 基準量(Base) &gt; 0 かつ 単価(Price) &gt; 0。<br/>
-              商品によって「本単価」なのに規格に24/C/Sが付くことがあるので、基準量(Base)を正に寄せる運用。
+              ケース単価なのに規格に24/C/Sが付くことがあるので、基準量(Base)を正に寄せる運用。
             </div>
             <div class="row">
               <button class="btn secondary" id="btnMasterSaveNow">今すぐ保存</button>
-              <button class="btn danger" id="btnMasterClearOverrides">基準量の手入力を全削除（自動解析へ）</button>
+              <button class="btn danger" id="btnMasterClearOverrides">基準量の手入力を全削除</button>
             </div>
           </div>
         </div>
@@ -574,12 +714,12 @@
             <div>
               <h2>レシピ原価（材料×使用量 → 自動原価）</h2>
               <div class="hint">
-                材料は <b>エイリアス</b> / <b>よみ(かな)</b> / <b>商品名</b> で検索して候補から選ぶ。<br/>
-                <b>使用量プリセット</b> を登録して、行の横ボタンで一発入力できる（例：リキュール30ml / ビール300ml）。
+                材料は <b>エイリアス</b> / <b>よみ</b> / <b>商品名</b> で検索して候補から選ぶ。<br/>
+                売上連携では、<b>出来高を入れると1杯(1人前)原価</b>として使います。
               </div>
             </div>
             <div class="pill">
-              <span>ショートカット：</span><span class="kbd">Ctrl</span> + <span class="kbd">S</span> で保存
+              <span>ショートカット：</span><span class="kbd">Ctrl</span> + <span class="kbd">S</span>
             </div>
           </div>
 
@@ -587,7 +727,7 @@
             <div class="split">
               <div>
                 <label>レシピ名</label>
-                <input id="recipeName" type="text" placeholder="例：自家製サングリア / ハイボール / アヒージョ など" />
+                <input id="recipeName" type="text" placeholder="例：自家製サングリア / ハイボール / アヒージョ" />
               </div>
               <div>
                 <label>出来高（任意）</label>
@@ -601,7 +741,7 @@
             <details>
               <summary class="muted" style="cursor:pointer;">使用量プリセット（保存してボタン化）</summary>
               <div class="tiny" style="margin-top:10px; line-height:1.65;">
-                例：<b>リキュール 30ml</b> / <b>ビール 300ml</b> みたいな定番量を作っておくと、レシピ入力が速い。
+                例：<b>リキュール 30ml</b> / <b>ビール 300ml</b> みたいな定番量を作っておくと速い。
               </div>
 
               <div class="split" style="margin-top:10px;">
@@ -657,13 +797,13 @@
               </div>
               <div class="box">
                 <div class="big mono" id="kpiRecipeWarnings">0</div>
-                <div class="lbl">原価NG材料（要マスター修正）</div>
+                <div class="lbl">原価NG材料</div>
               </div>
             </div>
 
             <div class="footActions">
               <div class="tiny">
-                NGが出たら、<b>原価マスター</b>で「基準量(Base)」や「単価(Price)」を整える。
+                NGが出たら、<b>原価マスター</b>で基準量(Base)や単価(Price)を整える。
               </div>
               <div class="row">
                 <button class="btn secondary" id="btnGoFixMaster">マスターを開く</button>
@@ -677,7 +817,7 @@
           <div class="hd">
             <div>
               <h2>保存済みレシピ</h2>
-              <div class="hint">チェックして「選択削除」or「全削除」。読み込みはボタン。</div>
+              <div class="hint">チェックして「選択削除」or「全削除」。読み込み・複製はボタン。</div>
             </div>
           </div>
           <div class="bd">
@@ -698,6 +838,224 @@
         </div>
       </div>
     </section>
+    <!-- SALES -->
+    <section id="tab-sales" class="tabPage" style="display:none;">
+      <div class="card">
+        <div class="hd">
+          <div>
+            <h2>売上原価（xlsx読込 → メニューとレシピ紐づけ）</h2>
+            <div class="hint">
+              ・xlsxの <b>並び順をそのまま維持</b> します（カテゴリ順優先）。<br/>
+              ・<b>「〜飲み放題」で終わる行</b> は売上集計行として扱います。<br/>
+              ・<b>先頭Fかつ売価0</b> は飲み放題使用分としてレシピ紐づけできます。<br/>
+              ・<b>単品ドリンク</b> は紐づいたレシピの 1杯原価 × 出数 で見込み原価計算します。<br/>
+              ・不要メニューはチェックして <b>複数非表示</b> にできます。
+            </div>
+          </div>
+          <div class="pill">
+            <span>外部読込：</span><b class="goodText">xlsx</b>
+          </div>
+        </div>
+
+        <div class="bd">
+          <div class="split">
+            <div>
+              <label>売上xlsxファイル</label>
+              <input id="xlsxFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+              <div class="tiny" style="margin-top:6px;">月報・期間売上などのxlsxを読み込み。</div>
+            </div>
+            <div>
+              <label>現在の読込状況</label>
+              <div class="pill" style="min-height:42px;">
+                <span id="salesSourceInfo">未読込</span>
+              </div>
+              <div class="tiny" style="margin-top:6px;">抽出対象：飲み放題売上 / F使用行 / 売価あり単品</div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="dropZone" id="xlsxDropZone">
+            <div class="dzLeft">
+              <div class="dzTitle">ここにxlsxファイルをドロップ</div>
+              <div class="dzSub">
+                期間売上のメニュー別日報などをドロップ。<br/>
+                列設定は「データ管理 → 設定」で変更できます。
+              </div>
+            </div>
+            <div class="dzRight">
+              <span class="tiny muted">または</span>
+              <span class="btn small secondary fileBtn">
+                xlsxファイル選択
+                <input id="xlsxDropInput" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+              </span>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row">
+            <button class="btn good" id="btnImportXlsx">xlsx取り込み</button>
+            <button class="btn secondary" id="btnAutoLinkMenuRecipe">レシピ自動候補あて</button>
+            <button class="btn secondary" id="btnClearMenuSales">読込結果クリア</button>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="salesToolbar">
+            <div class="salesFilters">
+              <div style="min-width:240px;">
+                <label>検索（メニュー名）</label>
+                <input id="salesSearch" type="text" placeholder="例：飲み放題 / ハイボール / Fジン など" />
+              </div>
+              <div style="min-width:180px;">
+                <label>フィルタ</label>
+                <select id="salesFilter">
+                  <option value="all" selected>全件</option>
+                  <option value="nomiSales">飲み放題売上</option>
+                  <option value="fUsage">F使用</option>
+                  <option value="single">単品</option>
+                  <option value="unlinked">未紐づけ</option>
+                  <option value="hidden">非表示のみ</option>
+                </select>
+              </div>
+              <label class="inlineChk" style="margin-top:24px;">
+                <input type="checkbox" id="chkShowHiddenSales" />
+                <span class="tiny">非表示も表示</span>
+              </label>
+            </div>
+
+            <div class="row">
+              <button class="btn small secondary" id="btnHideSelectedMenus" disabled>選択メニューを非表示</button>
+              <button class="btn small secondary" id="btnUnhideAllMenus">非表示を全解除</button>
+            </div>
+          </div>
+
+          <div class="hiddenMenuBox">
+            <div class="row" style="justify-content:space-between;">
+              <div class="tiny">
+                カテゴリ一括非表示：
+                <span class="mono" id="salesCategoryHiddenInfo">大0 / 中0</span>
+              </div>
+              <div class="tiny muted">
+                A列=大分類 / B列=中分類
+              </div>
+            </div>
+
+            <div class="split" style="margin-top:10px;">
+              <div>
+                <div class="tiny" style="margin-bottom:8px;">大分類</div>
+                <div class="checkList" id="salesLargeCategoryList"></div>
+              </div>
+              <div>
+                <div class="tiny" style="margin-bottom:8px;">中分類</div>
+                <div class="checkList" id="salesMiddleCategoryList"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="kpi5">
+            <div class="box">
+              <div class="big mono" id="kpiSalesMenus">0</div>
+              <div class="lbl">対象メニュー数</div>
+            </div>
+            <div class="box">
+              <div class="big mono" id="kpiSalesShown">0</div>
+              <div class="lbl">表示中</div>
+            </div>
+            <div class="box">
+              <div class="big mono" id="kpiSalesHidden">0</div>
+              <div class="lbl">非表示</div>
+            </div>
+            <div class="box">
+              <div class="big mono" id="kpiSalesLinked">0</div>
+              <div class="lbl">紐づけ済み</div>
+            </div>
+            <div class="box">
+              <div class="big mono" id="kpiSalesQty">0</div>
+              <div class="lbl">表示中合計出数</div>
+            </div>
+          </div>
+
+<div class="salesSummaryGrid">
+            <div class="summaryBox">
+              <div class="ttl">① 飲み放題</div>
+              <div class="summaryLine"><span>飲み放題売上</span><span class="v" id="sumNomiSales">¥0</span></div>
+              <div class="summaryLine"><span>F使用 見込み原価</span><span class="v" id="sumNomiCost">¥0</span></div>
+              <div class="summaryLine"><span>飲み放題 原価率</span><span class="v" id="sumNomiRate">-</span></div>
+              <div class="summaryLine"><span>未紐づけF件数</span><span class="v" id="sumNomiUnlinked">0</span></div>
+            </div>
+
+            <div class="summaryBox">
+              <div class="ttl">② 単品ドリンク</div>
+              <div class="summaryLine"><span>単品対象売上</span><span class="v" id="sumSingleSales">¥0</span></div>
+              <div class="summaryLine"><span>単品 見込み原価</span><span class="v" id="sumSingleCost">¥0</span></div>
+              <div class="summaryLine"><span>単品 原価率</span><span class="v" id="sumSingleRate">-</span></div>
+              <div class="summaryLine"><span>未紐づけ単品件数</span><span class="v" id="sumSingleUnlinked">0</span></div>
+            </div>
+
+            <div class="summaryBox">
+              <div class="ttl">③ 合算</div>
+              <div class="summaryLine"><span>合算対象売上</span><span class="v" id="sumTotalSales">¥0</span></div>
+              <div class="summaryLine"><span>合算 見込み原価</span><span class="v" id="sumTotalCost">¥0</span></div>
+              <div class="summaryLine"><span>合算 原価率</span><span class="v" id="sumTotalRate">-</span></div>
+              <div class="summaryLine"><span>非表示件数</span><span class="v" id="sumHiddenMenus">0</span></div>
+            </div>
+          </div>
+
+          <div class="hiddenMenuBox">
+            <div class="row" style="justify-content:space-between;">
+              <div class="tiny">
+                非表示メニュー一覧：
+                <span class="mono" id="hiddenMenuCountInfo">0</span>
+              </div>
+            </div>
+            <div class="checkList" id="hiddenMenuList" style="margin-top:10px;"></div>
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row" style="justify-content:space-between;">
+            <div class="tiny">
+              現在表示中の読込順は <b>xlsxの元順序維持</b>。　
+              売上合計：<span class="mono" id="salesTotalSalesInfo">¥0</span>　
+              原価率：<span class="mono" id="salesTotalRateInfo">-</span>　
+              選択数：<span class="mono" id="salesSelectedCountInfo">0</span>　
+              表示中：<span class="mono" id="salesVisibleCountInfo">0</span>　
+              非表示：<span class="mono" id="salesHiddenCountInfo">0</span>　
+              未紐づけ総数：<span class="mono" id="salesUnlinkedInfo">0</span>
+            </div>
+            <div class="tiny" id="salesImportedAtInfo">未読込</div>
+          </div>
+          <div class="hr"></div>
+
+          <div class="tableWrap">
+            <table style="min-width:1680px;">
+              <thead>
+                <tr>
+                  <th style="min-width:58px;">選択</th>
+                  <th style="min-width:260px;">メニュー名</th>
+                  <th style="min-width:110px;">種別</th>
+                  <th style="min-width:140px;">操作</th>
+                  <th class="right" style="min-width:90px;">出数</th>
+                  <th class="right" style="min-width:110px;">登録売価</th>
+                  <th class="right" style="min-width:120px;">売上金額</th>
+                  <th style="min-width:280px;">紐づけレシピ</th>
+                  <th class="right" style="min-width:120px;">1杯原価</th>
+                  <th class="right" style="min-width:120px;">総原価</th>
+                  <th class="right" style="min-width:100px;">原価率</th>
+                  <th style="min-width:120px;">状態</th>
+                  <th style="min-width:120px;">元行</th>
+                </tr>
+              </thead>
+              <tbody id="salesTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- DATA -->
     <section id="tab-data" class="tabPage" style="display:none;">
@@ -707,13 +1065,13 @@
             <div>
               <h2>バックアップ（JSON）</h2>
               <div class="hint">
-                Ver0.5〜：インポート時、端末側のPrice（最新CSV）を優先して保持します（Base/レシピ/設定が主役）。
+                Base / Price / レシピ / 売上読込結果 / 紐づけ / 非表示設定 / 各種設定をまとめて保存します。
               </div>
             </div>
           </div>
           <div class="bd">
             <div class="row">
-              <button class="btn secondary" id="btnExportAll">全データをJSON出力（ファイル名指定）</button>
+              <button class="btn secondary" id="btnExportAll">全データをJSON出力</button>
               <button class="btn danger" id="btnWipeAll">全データ初期化（危険）</button>
             </div>
 
@@ -722,7 +1080,7 @@
             <div class="dropZone" id="jsonDropZone">
               <div class="dzLeft">
                 <div class="dzTitle">ここにJSONファイルをドロップ</div>
-                <div class="dzSub">ドロップすると読み込み → 確認ダイアログ後にインポートします（Base/レシピ等は上書き）。</div>
+                <div class="dzSub">ドロップすると読み込み → 確認後にインポートします。</div>
               </div>
               <div class="dzRight">
                 <span class="tiny muted">または</span>
@@ -738,14 +1096,10 @@
 
             <div>
               <label>JSONを貼り付けてインポート（手動）</label>
-              <textarea id="importJsonArea" placeholder="ここにJSONを貼り付け → インポート（手動でもOK）"></textarea>
+              <textarea id="importJsonArea" placeholder="ここにJSONを貼り付け → インポート"></textarea>
               <div class="row" style="margin-top:10px;">
                 <button class="btn good" id="btnImportAll">JSONインポート</button>
                 <button class="btn secondary" id="btnCopyAll">貼り付けエリアをコピー</button>
-              </div>
-              <div class="tiny" style="margin-top:10px; line-height:1.6;">
-                ※ドロップの方が楽。<br/>
-                ※貼り付けも残してる（LINE等でJSON投げて回収する運用用）
               </div>
             </div>
           </div>
@@ -755,31 +1109,65 @@
           <div class="hd">
             <div>
               <h2>設定</h2>
-              <div class="hint">CSV列の自動検出がコケたとき用（最低限）。</div>
+              <div class="hint">CSV列・売上xlsx列の自動読込がズレた時用。</div>
             </div>
           </div>
           <div class="bd">
-            <div class="split">
-              <div>
-                <label>CSV：商品名列（優先：列名検出）</label>
-                <input id="cfgColName" type="text" placeholder="例：商品名 / [商品名] / I" />
-                <div class="tiny" style="margin-top:6px;">空なら自動。IはExcel列（A=1…）として扱う。</div>
+            <details open>
+              <summary class="muted" style="cursor:pointer;">棚卸CSV 設定</summary>
+              <div class="split" style="margin-top:10px;">
+                <div>
+                  <label>CSV：商品名列</label>
+                  <input id="cfgColName" type="text" placeholder="例：商品名 / [商品名] / I" />
+                </div>
+                <div>
+                  <label>CSV：単価列</label>
+                  <input id="cfgColPrice" type="text" placeholder="例：単価 / 卸単価 / K" />
+                </div>
+                <div>
+                  <label>CSV：規格/入数列</label>
+                  <input id="cfgColSpec" type="text" placeholder="例：規格・入数／単位 / J" />
+                </div>
+                <div>
+                  <label>CSV：単位列</label>
+                  <input id="cfgColUnit" type="text" placeholder="例：単位 / M" />
+                </div>
               </div>
-              <div>
-                <label>CSV：単価列（優先：列名検出）</label>
-                <input id="cfgColPrice" type="text" placeholder="例：単価 / 卸単価 / K" />
-              </div>
-              <div>
-                <label>CSV：規格/入数列（任意）</label>
-                <input id="cfgColSpec" type="text" placeholder="例：規格・入数／単位 / J" />
-              </div>
-              <div>
-                <label>CSV：単位列（任意）</label>
-                <input id="cfgColUnit" type="text" placeholder="例：単位 / M" />
-              </div>
-            </div>
+            </details>
 
-            <div class="row" style="margin-top:10px;">
+            <div class="hr"></div>
+
+            <details open>
+              <summary class="muted" style="cursor:pointer;">売上xlsx 設定</summary>
+              <div class="split" style="margin-top:10px;">
+                <div>
+                  <label>シート名（空なら先頭シート）</label>
+                  <input id="salesSheetName" type="text" placeholder="例：WBM大阪" />
+                </div>
+                <div>
+                  <label>メニュー名列</label>
+                  <input id="salesColMenuName" type="text" placeholder="例：D" />
+                </div>
+                <div>
+                  <label>出数列</label>
+                  <input id="salesColQty" type="text" placeholder="例：F" />
+                </div>
+                <div>
+                  <label>登録売価列</label>
+                  <input id="salesColSellPrice" type="text" placeholder="例：E または H" />
+                </div>
+                <div>
+                  <label>売上金額列</label>
+                  <input id="salesColSalesAmount" type="text" placeholder="例：H" />
+                </div>
+              </div>
+              <div class="tiny" style="margin-top:8px; line-height:1.6;">
+                初期値は <b>D=メニュー名 / F=出数 / E=登録単価 / H=売上金額</b>。<br/>
+                売価がH列管理なら、登録売価列を H に変更して使ってください。
+              </div>
+            </details>
+
+            <div class="row" style="margin-top:12px;">
               <button class="btn good" id="btnSaveCfg">設定保存</button>
               <button class="btn secondary" id="btnResetCfg">設定リセット</button>
             </div>
@@ -787,11 +1175,12 @@
             <div class="hr"></div>
 
             <details>
-              <summary class="muted" style="cursor:pointer;">今後のVerでやる予定（メモ）</summary>
-              <div class="tiny" style="margin-top:10px; line-height:1.65;">
-                ・Supabase等でクラウド同期（複数iPad共有）<br/>
-                ・レシピをメニューと紐づけ（販売単価→粗利）<br/>
-                ・棚卸CSVの月次差分（単価変動トラッキング）<br/>
+              <summary class="muted" style="cursor:pointer;">今後のVerでやる予定</summary>
+              <div class="tiny" style="margin-top:10px; line-height:1.7;">
+                ・売上メニューの自動レシピ候補精度アップ<br/>
+                ・複数月の売上比較<br/>
+                ・メニュー別 粗利/原価率ランキング<br/>
+                ・Supabase等でクラウド同期
               </div>
             </details>
           </div>
@@ -806,36 +1195,63 @@
   <div class="t2" id="toastT2">ローカルに保存済み</div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 (() => {
-  const STORAGE_KEY = "cost_recipe_app_v0_1"; // 0.1〜0.6共通（データ継続）
+  const STORAGE_KEY = "cost_recipe_app_v0_9";
   const nowIso = () => new Date().toISOString();
   const $ = (sel) => document.querySelector(sel);
 
-  // ---------- Load & migrate ----------
   const loaded = loadState();
   const state = loaded ? migrate(loaded) : createDefaultState();
 
   function createDefaultState(){
     return {
-      version: "0.6",
+      version: "0.9",
       updatedAt: nowIso(),
+
       cfg: { colName:"", colPrice:"", colSpec:"", colUnit:"" },
 
-      // split master
+      salesCfg: {
+        sheetName: "",
+        colMenuName: "D",
+        colQty: "F",
+        colSellPrice: "E",
+        colSalesAmount: "H"
+      },
+
       masterBase: {},
       masterPrice: {},
-
       recipes: {},
+
+      menuSales: {
+        sourceName: "",
+        importedAt: "",
+        sheetName: "",
+        items: {}
+      },
+
+      menuRecipeLinks: {},
+      salesHiddenMenus: {},
+      salesHiddenLargeCategories: {},
+      salesHiddenMiddleCategories: {},
+      salesTypeOverrides: {},
+
       qtyPresets: {
         ml: [
-          { id: "p_liq_30", label: "リキュール", qty: 30 },
-          { id: "p_beer_300", label: "ビール", qty: 300 }
+          { id:"p_liq_30", label:"リキュール", qty:30 },
+          { id:"p_beer_300", label:"ビール", qty:300 }
         ],
         g: [],
         "個": []
       },
-      ui: { lastTab: "import", recipeSel: [] }
+
+      ui: {
+        lastTab: "import",
+        recipeSel: [],
+        salesMenuSel: [],
+        salesShowHidden: false
+      }
     };
   }
 
@@ -845,20 +1261,46 @@
     s.masterBase = s.masterBase || {};
     s.masterPrice = s.masterPrice || {};
     s.recipes = s.recipes || {};
+
+    s.menuSales = s.menuSales || { sourceName:"", importedAt:"", sheetName:"", items:{} };
+    s.menuSales.items = s.menuSales.items || {};
+
+    s.menuRecipeLinks = s.menuRecipeLinks || {};
+    s.salesHiddenMenus = s.salesHiddenMenus || {};
+    s.salesHiddenLargeCategories = s.salesHiddenLargeCategories || {};
+    s.salesHiddenMiddleCategories = s.salesHiddenMiddleCategories || {};
+    s.salesTypeOverrides = s.salesTypeOverrides || {};
     s.qtyPresets = s.qtyPresets || { ml:[], g:[], "個":[] };
-    s.ui = s.ui || { lastTab:"import", recipeSel:[] };
+
+    s.ui = s.ui || {};
     if (!Array.isArray(s.ui.recipeSel)) s.ui.recipeSel = [];
+    if (!Array.isArray(s.ui.salesMenuSel)) s.ui.salesMenuSel = [];
+    if (typeof s.ui.salesShowHidden !== "boolean") s.ui.salesShowHidden = false;
+    if (!s.ui.lastTab) s.ui.lastTab = "import";
+
+    s.salesCfg = s.salesCfg || {
+      sheetName:"",
+      colMenuName:"D",
+      colQty:"F",
+      colSellPrice:"E",
+      colSalesAmount:"H"
+    };
   }
 
-  // migrate old versions (0.1〜0.4 master -> base/price)
   function migrate(s){
     if (!s || typeof s !== "object") return createDefaultState();
 
     s.version = s.version || "0.1";
     s.updatedAt = s.updatedAt || nowIso();
     s.cfg = s.cfg || { colName:"", colPrice:"", colSpec:"", colUnit:"" };
+    s.salesCfg = s.salesCfg || {
+      sheetName:"",
+      colMenuName:"D",
+      colQty:"F",
+      colSellPrice:"E",
+      colSalesAmount:"H"
+    };
 
-    // presets
     if (!s.qtyPresets || typeof s.qtyPresets !== "object"){
       s.qtyPresets = createDefaultState().qtyPresets;
     } else {
@@ -871,7 +1313,6 @@
       }
     }
 
-    // if legacy master exists, convert
     if (!s.masterBase && s.master){
       const base = {};
       const price = {};
@@ -910,7 +1351,6 @@
 
     ensureLayers(s);
 
-    // normalize base entries
     for (const k of Object.keys(s.masterBase)){
       const b = s.masterBase[k] || {};
       b.key = b.key || k;
@@ -928,7 +1368,6 @@
       s.masterBase[k] = b;
     }
 
-    // normalize price entries + ensure base stub for price-only keys
     for (const k of Object.keys(s.masterPrice)){
       const p = s.masterPrice[k] || {};
       p.key = p.key || k;
@@ -956,7 +1395,6 @@
       }
     }
 
-    // normalize recipes
     for (const id of Object.keys(s.recipes)){
       const r = s.recipes[id];
       if (!r) continue;
@@ -967,17 +1405,32 @@
       r.updatedAt = r.updatedAt || nowIso();
     }
 
-    s.version = "0.6";
+    for (const k of Object.keys(s.menuSales.items || {})){
+      const it = s.menuSales.items[k] || {};
+      it.key = it.key || k;
+      it.menuName = safeText(it.menuName || k);
+      it.qty = Number(it.qty) || 0;
+      it.sellPrice = Number(it.sellPrice) || 0;
+      it.salesAmount = Number(it.salesAmount) || 0;
+      it.largeCategory = safeText(it.largeCategory || "");
+      it.middleCategory = safeText(it.middleCategory || "");
+      it.isNomihodai = !!it.isNomihodai;
+      it.sourceRows = Array.isArray(it.sourceRows) ? it.sourceRows : [];
+      it.firstRow = Number(it.firstRow) || 0;
+      it.order = Number.isFinite(Number(it.order)) ? Number(it.order) : (Number(it.firstRow) || 0);
+      s.menuSales.items[k] = it;
+    }
+
+    s.version = "0.9";
     return s;
   }
 
-  // ---------- Toast ----------
   const toastEl = $("#toast");
   const toastT1 = $("#toastT1");
   const toastT2 = $("#toastT2");
   let toastTimer = null;
 
-  function toast(t1, t2="") {
+  function toast(t1, t2=""){
     toastT1.textContent = t1;
     toastT2.textContent = t2;
     toastEl.classList.add("show");
@@ -985,31 +1438,29 @@
     toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2200);
   }
 
-  // ---------- Storage ----------
-  function saveState(debounced=true) {
+  function saveState(debounced=true){
     state.updatedAt = nowIso();
     const doSave = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    if (!debounced) { doSave(); return; }
+    if (!debounced){ doSave(); return; }
     clearTimeout(saveState._t);
     saveState._t = setTimeout(doSave, 250);
   }
 
-  function loadState() {
-    try {
+  function loadState(){
+    try{
       const s = localStorage.getItem(STORAGE_KEY);
       return s ? JSON.parse(s) : null;
-    } catch(e) {
+    }catch(e){
       console.warn(e);
       return null;
     }
   }
 
-  // ---------- Utils ----------
-  function normalizeZenkakuDigits(s) {
+  function normalizeZenkakuDigits(s){
     return String(s).replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFEE0));
   }
   function safeText(s){ return (s == null) ? "" : String(s); }
-  function normalizeNumStr(s) {
+  function normalizeNumStr(s){
     if (s == null) return "";
     s = String(s).trim();
     s = normalizeZenkakuDigits(s);
@@ -1017,22 +1468,22 @@
     s = s.replace(/[．]/g, ".");
     return s;
   }
-  function toNumber(s) {
+  function toNumber(s){
     const t = normalizeNumStr(s);
     const n = Number(t);
     return Number.isFinite(n) ? n : 0;
   }
-  function normKey(rawName) { return safeText(rawName).trim().replace(/\s+/g, " "); }
+  function normKey(rawName){ return safeText(rawName).trim().replace(/\s+/g, " "); }
   function yen(n){
     if (!Number.isFinite(n)) return "¥-";
-    const x = Math.round(n);
-    return "¥" + x.toLocaleString("ja-JP");
+    return "¥" + Math.round(n).toLocaleString("ja-JP");
   }
-  function fmt(n, d=4){ if (!Number.isFinite(n)) return "-"; return n.toFixed(d); }
+  function fmt(n, d=4){ if (!Number.isFinite(n)) return "-"; return Number(n).toFixed(d); }
+  function pct(n, d=1){ if (!Number.isFinite(n)) return "-"; return (n * 100).toFixed(d) + "%"; }
 
   function isCaseUnit(u){
     u = safeText(u).trim().toUpperCase();
-    return (u === "C/S" || u === "CS" || u === "ケース" || u === "箱" || u === "CASE" || u === "C/S　" );
+    return (u === "C/S" || u === "CS" || u === "ケース" || u === "箱" || u === "CASE" || u === "C/S　");
   }
 
   function dateTag(){
@@ -1076,12 +1527,15 @@
       .replace(/'/g,"&#039;");
   }
   function escapeHtmlAttr(s){ return escapeHtml(s).replace(/\n/g," "); }
-  function cssEscape(s){ return safeText(s).replace(/\\/g,"\\\\").replace(/"/g,'\\"'); }
+  function cssEscape(s){
+    if (window.CSS && typeof window.CSS.escape === "function") return window.CSS.escape(safeText(s));
+    return safeText(s).replace(/["\\#.;?+*~':^$[\]()=>|/@]/g, "\\$&");
+  }
   function shortTime(iso){
     if (!iso) return "-";
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return "-";
-    const pad=(n)=>String(n).padStart(2,"0");
+    const pad = (n)=>String(n).padStart(2,"0");
     return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   function cryptoId(){ return "r" + Math.random().toString(16).slice(2) + Date.now().toString(16); }
@@ -1103,7 +1557,6 @@
     return (Number(p.unitPrice) > 0) && (Number(b.baseQty) > 0) && safeText(b.baseType).trim().length > 0;
   }
 
-  // ---------- CSV parse ----------
   function sniffHeaderRow(rows){
     if (!rows.length) return null;
     const r0 = rows[0].map(x => safeText(x));
@@ -1113,6 +1566,7 @@
     }
     return null;
   }
+
   function headerIndex(headers, candidates){
     const norm = (s) => safeText(s).replace(/[\[\]\s]/g, "");
     const h = headers.map(x => norm(x));
@@ -1123,22 +1577,159 @@
     }
     return -1;
   }
+
   function excelColToIndex(colLike){
     const s = safeText(colLike).trim().toUpperCase();
     if (!s) return -1;
     if (/^[A-Z]+$/.test(s)){
       let n = 0;
       for (let i=0;i<s.length;i++){
-        n = n*26 + (s.charCodeAt(i)-64);
+        n = n * 26 + (s.charCodeAt(i) - 64);
       }
-      return n-1;
+      return n - 1;
     }
     return -1;
   }
+
+  function normalizeHeaderCell(s){
+    return safeText(s)
+      .replace(/\s+/g, "")
+      .replace(/[：:]/g, "")
+      .replace(/[（）()【】\[\]]/g, "")
+      .toLowerCase();
+  }
+function cleanSalesMenuName(name){
+  let s = safeText(name).trim();
+
+  // 先頭の「ｾﾚｸﾄ)」だけ消す
+  s = s.replace(/^[\s　]*ｾﾚｸﾄ\)\s*/i, "");
+
+  return s.trim();
+}
+
+function cleanSalesCategoryName(name){
+  return safeText(name).replace(/[『』]/g, "").trim();
+}
+
+function buildMiddleCategoryKey(largeCategory, middleCategory){
+  return `${safeText(largeCategory).trim()}__${safeText(middleCategory).trim()}`;
+}
+
+function isHiddenLargeCategory(name){
+  return !!((state.salesHiddenLargeCategories || {})[safeText(name).trim()]);
+}
+
+function isHiddenMiddleCategory(largeCategory, middleCategory){
+  const key = buildMiddleCategoryKey(largeCategory, middleCategory);
+  return !!((state.salesHiddenMiddleCategories || {})[key]);
+}
+
+function setHiddenLargeCategory(name, flag){
+  const key = safeText(name).trim();
+  if (!key) return;
+  state.salesHiddenLargeCategories = state.salesHiddenLargeCategories || {};
+  if (flag) state.salesHiddenLargeCategories[key] = true;
+  else delete state.salesHiddenLargeCategories[key];
+}
+
+function setHiddenMiddleCategory(largeCategory, middleCategory, flag){
+  const key = buildMiddleCategoryKey(largeCategory, middleCategory);
+  if (key === "__") return;
+  state.salesHiddenMiddleCategories = state.salesHiddenMiddleCategories || {};
+  if (flag) state.salesHiddenMiddleCategories[key] = true;
+  else delete state.salesHiddenMiddleCategories[key];
+}
+
+function getSalesItemHiddenReason(item){
+  if (isHiddenLargeCategory(item.largeCategory)) return "large";
+  if (isHiddenMiddleCategory(item.largeCategory, item.middleCategory)) return "middle";
+  if (isHiddenMenu(item.key)) return "manual";
+  return "";
+}
+
+function isSalesItemHidden(item){
+  return !!getSalesItemHiddenReason(item);
+}
+
+  function detectSalesHeaderRow(rows){
+    const maxScan = Math.min(rows.length, 8);
+    let bestRow = -1;
+    let bestScore = 0;
+
+    for (let i = 0; i < maxScan; i++){
+      const row = Array.isArray(rows[i]) ? rows[i] : [];
+      const joined = row.map(normalizeHeaderCell).join("|");
+
+      let score = 0;
+      if (/(メニュー名|メニュー|商品名|品名)/.test(joined)) score++;
+      if (/(出数|数量|個数|点数|数)/.test(joined)) score++;
+      if (/(売上金額|売上高|売上|金額|小計)/.test(joined)) score++;
+      if (/(登録売価|売価|単価|価格)/.test(joined)) score++;
+
+      if (score > bestScore){
+        bestScore = score;
+        bestRow = i;
+      }
+    }
+
+    return bestScore >= 2 ? bestRow : -1;
+  }
+
+  function findSalesColByHeader(headerRowCells, patterns){
+    const headers = headerRowCells.map(normalizeHeaderCell);
+    for (let i = 0; i < headers.length; i++){
+      const h = headers[i];
+      for (const p of patterns){
+        if (h.includes(normalizeHeaderCell(p))) return i;
+      }
+    }
+    return -1;
+  }
+
+  function resolveSalesColumnIndexes(rows, salesCfg){
+    const manual = {
+      idxMenu: excelColToIndex((salesCfg && salesCfg.colMenuName) || "D"),
+      idxQty: excelColToIndex((salesCfg && salesCfg.colQty) || "F"),
+      idxSell: excelColToIndex((salesCfg && salesCfg.colSellPrice) || "E"),
+      idxSales: excelColToIndex((salesCfg && salesCfg.colSalesAmount) || "H"),
+      headerRow: -1,
+      autoDetected: false
+    };
+
+    const headerRow = detectSalesHeaderRow(rows);
+    if (headerRow < 0) return manual;
+
+    const headerCells = Array.isArray(rows[headerRow]) ? rows[headerRow] : [];
+
+    const auto = {
+      idxMenu: findSalesColByHeader(headerCells, ["メニュー名","メニュー","商品名","品名"]),
+      idxQty: findSalesColByHeader(headerCells, ["出数","数量","個数","点数","数"]),
+      idxSell: findSalesColByHeader(headerCells, ["登録売価","売価","単価","価格"]),
+      idxSales: findSalesColByHeader(headerCells, ["売上金額","売上高","売上","金額","小計"])
+    };
+
+    const canUseAuto =
+      auto.idxMenu >= 0 &&
+      auto.idxQty >= 0 &&
+      auto.idxSales >= 0;
+
+    if (!canUseAuto) return manual;
+
+    return {
+      idxMenu: auto.idxMenu,
+      idxQty: auto.idxQty,
+      idxSell: auto.idxSell >= 0 ? auto.idxSell : manual.idxSell,
+      idxSales: auto.idxSales,
+      headerRow,
+      autoDetected: true
+    };
+  }
+
   function parseCSV(text){
     const rows = [];
     let i = 0, field = "", row = [];
     let inQuotes = false;
+
     while (i < text.length){
       const c = text[i];
       if (inQuotes){
@@ -1155,6 +1746,7 @@
         field += c; i++; continue;
       }
     }
+
     row.push(field);
     rows.push(row);
     if (rows.length && rows[rows.length-1].length === 1 && safeText(rows[rows.length-1][0]).trim() === "") rows.pop();
@@ -1175,7 +1767,7 @@
 
   function extractVolumeMl(text){
     text = safeText(text);
-    text = normalizeZenkakuDigits(text).replace(/[．]/g,".").replace(/\s+/g,"");
+    text = normalizeZenkakuDigits(text).replace(/[．]/g, ".").replace(/\s+/g, "");
     let m = text.match(/(\d+(?:\.\d+)?)\s*(ml|mL|ML)/);
     if (m) return { ml: parseFloat(m[1]), src: m[0] };
     m = text.match(/(\d+(?:\.\d+)?)\s*(cl|cL|CL|ｃｌ)/);
@@ -1185,8 +1777,8 @@
     m = text.match(/(\d+(?:\.\d+)?)\s*(l|L|ｌ|Ｌ|ℓ)/);
     if (m) return { ml: parseFloat(m[1]) * 1000, src: m[0] };
     m = text.match(/(?:^|[^0-9])(\d{2,4})(?:x|X|×)\s*\d{1,3}(?:$|[^a-zA-Z])/);
-    if (m) {
-      const v = parseInt(m[1],10);
+    if (m){
+      const v = parseInt(m[1], 10);
       if (v >= 50 && v <= 4000) return { ml: v, src: m[0] };
     }
     return null;
@@ -1194,7 +1786,7 @@
 
   function extractWeightG(text){
     text = safeText(text);
-    text = normalizeZenkakuDigits(text).replace(/[．]/g,".").replace(/\s+/g,"");
+    text = normalizeZenkakuDigits(text).replace(/[．]/g, ".").replace(/\s+/g, "");
     let m = text.match(/(\d+(?:\.\d+)?)\s*(kg|KG|ＫＧ)/);
     if (m) return { g: parseFloat(m[1]) * 1000, src: m[0] };
     m = text.match(/(\d+(?:\.\d+)?)\s*(g|G|ｇ)/);
@@ -1211,28 +1803,130 @@
     let baseType = "個";
     let baseQty = 1;
 
-    if (vol && vol.ml > 0){ baseType = "ml"; baseQty = vol.ml; }
-    else if (w && w.g > 0){ baseType = "g"; baseQty = w.g; }
-    else { baseType = "個"; baseQty = 1; }
+    if (vol && vol.ml > 0){
+      baseType = "ml";
+      baseQty = vol.ml;
+    } else if (w && w.g > 0){
+      baseType = "g";
+      baseQty = w.g;
+    } else {
+      baseType = "個";
+      baseQty = 1;
+    }
 
-    if (isCaseUnit(priceUnit) && mult > 1){ baseQty = baseQty * mult; }
+    if (isCaseUnit(priceUnit) && mult > 1) baseQty = baseQty * mult;
     return { baseType, baseQty, mult };
   }
 
   function buildAliasDefault(rawName){
     let s = safeText(rawName).trim();
-    s = s.replace(/^【[^】]+】\s*/,"");
-    s = s.replace(/^[A-Z]{1,4}\d{2,6}\s*/,"");
-    s = s.replace(/\s+/g," ").trim();
+    s = s.replace(/^【[^】]+】\s*/, "");
+    s = s.replace(/^[A-Z]{1,4}\d{2,6}\s*/, "");
+    s = s.replace(/\s+/g, " ").trim();
     return s;
   }
 
-  // ---------- Tabs ----------
+function normalizeSearch(s){
+  s = safeText(s);
+  s = s.normalize("NFKC");
+  s = normalizeZenkakuDigits(s);
+  s = s.toLowerCase();
+  s = s.replace(/\s+/g, "").trim();
+  s = s.replace(/[・･\-\–—_／\/\(\)\[\]【】「」'"“”’’,\.]/g, "");
+  return s;
+}
+
+  function kataToHira(str){
+    return safeText(str).replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  }
+  function hiraToKata(str){
+    return safeText(str).replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+  }
+
+  function recipeUnitCostById(id){
+    const r = state.recipes[id];
+    if (!r) return 0;
+    const total = calcRecipeCost(r);
+    const y = toNumber(r.yield);
+    return y > 0 ? total / y : total;
+  }
+
+  function hasNomihodaiFPrefix(name){
+    return /^[FＦ][\s　]+/.test(safeText(name).trim());
+  }
+
+  function getSalesTypeOverride(key){
+    return safeText((state.salesTypeOverrides || {})[safeText(key).trim()]).trim();
+  }
+
+  function setSalesTypeOverride(key, value){
+    const k = safeText(key).trim();
+    if (!k) return;
+    state.salesTypeOverrides = state.salesTypeOverrides || {};
+    const v = safeText(value).trim();
+    if (v) state.salesTypeOverrides[k] = v;
+    else delete state.salesTypeOverrides[k];
+  }
+
+  function classifySalesItem(it){
+    const name = safeText(it && it.menuName).trim();
+    const key = safeText(it && it.key ? it.key : name).trim();
+    const sellPrice = Number(it && it.sellPrice) || 0;
+    const salesAmount = Number(it && it.salesAmount) || 0;
+
+    const manual = getSalesTypeOverride(key);
+
+    if (manual === "nomiSales"){
+      return {
+        isNomiSales: true,
+        isFUsage: false,
+        isSingle: false,
+        canLink: false,
+        manualType: manual
+      };
+    }
+
+    if (manual === "fUsage"){
+      return {
+        isNomiSales: false,
+        isFUsage: true,
+        isSingle: false,
+        canLink: true,
+        manualType: manual
+      };
+    }
+
+    if (manual === "single"){
+      return {
+        isNomiSales: false,
+        isFUsage: false,
+        isSingle: true,
+        canLink: true,
+        manualType: manual
+      };
+    }
+
+    const isNomiSales = /飲み放題\s*$/.test(name);
+    const isFUsage = hasNomihodaiFPrefix(name) && sellPrice <= 0 && salesAmount <= 0;
+    const isSingle = !isNomiSales && !isFUsage && (sellPrice > 0 || salesAmount > 0);
+    const canLink = isFUsage || isSingle;
+
+    return {
+      isNomiSales,
+      isFUsage,
+      isSingle,
+      canLink,
+      manualType: ""
+    };
+  }
+
+
   const tabs = Array.from(document.querySelectorAll(".tab"));
   const pages = {
     import: $("#tab-import"),
     master: $("#tab-master"),
     recipe: $("#tab-recipe"),
+    sales: $("#tab-sales"),
     data: $("#tab-data")
   };
 
@@ -1241,16 +1935,19 @@
     Object.entries(pages).forEach(([k,el]) => el.style.display = (k === tab ? "" : "none"));
     state.ui.lastTab = tab;
     saveState();
+
     if (tab === "import") renderImportKPIs();
     if (tab === "master") renderMaster();
     if (tab === "recipe") renderRecipe();
+    if (tab === "sales") renderSales();
     if (tab === "data") renderData();
   }
+
   tabs.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
 
-  // ---------- Import tab buttons ----------
   $("#btnGoMaster").addEventListener("click", () => setTab("master"));
   $("#btnGoRecipe").addEventListener("click", () => setTab("recipe"));
+  $("#btnGoSales").addEventListener("click", () => setTab("sales"));
 
   $("#btnAutoFillAlias").addEventListener("click", () => {
     let cnt = 0;
@@ -1271,7 +1968,7 @@
     let cnt = 0;
     for (const k of Object.keys(state.masterBase)){
       const b = state.masterBase[k];
-      const p = state.masterPrice[k] || {spec:"", priceUnit:""};
+      const p = state.masterPrice[k] || { spec:"", priceUnit:"" };
       if (!b.baseQtyManual){
         const auto = autoDeriveBase(b.rawName, p.spec, p.priceUnit);
         b.baseTypeAuto = auto.baseType;
@@ -1291,6 +1988,10 @@
   $("#btnImport").addEventListener("click", async () => {
     const file = $("#csvFile").files[0];
     if (!file){ toast("CSV未選択", "ファイルを選んでから取り込み"); return; }
+    await importCsvFile(file);
+  });
+
+  async function importCsvFile(file){
     const encoding = $("#csvEncoding").value;
     const mode = $("#importMode").value;
 
@@ -1320,7 +2021,6 @@
         const base = state.masterBase[key];
         const price = state.masterPrice[key];
 
-        // upsert price (CSV layer)
         if (!price){
           state.masterPrice[key] = {
             key,
@@ -1336,7 +2036,6 @@
           price.updatedAt = nowIso();
         }
 
-        // upsert base (fixed layer)
         if (!base){
           const auto = autoDeriveBase(it.rawName, it.spec, it.priceUnit);
           state.masterBase[key] = {
@@ -1358,7 +2057,7 @@
           base.rawName = it.rawName;
 
           if (!base.baseQtyManual){
-            const p2 = state.masterPrice[key] || {spec:"", priceUnit:""};
+            const p2 = state.masterPrice[key] || { spec:"", priceUnit:"" };
             const auto = autoDeriveBase(base.rawName, p2.spec, p2.priceUnit);
             base.baseTypeAuto = auto.baseType;
             base.baseQtyAuto = auto.baseQty;
@@ -1374,13 +2073,13 @@
 
       saveState(false);
       renderImportKPIs();
-      if (state.ui.lastTab === "master") renderMaster(); // CSV取り込みは全再描画OK（入力中ではない）
+      if (state.ui.lastTab === "master") renderMaster();
       toast("CSV取り込み完了", `追加 ${added} / 更新 ${updated} / スキップ ${skipped}`);
     } catch(e){
       console.error(e);
       toast("取り込み失敗", String(e && e.message ? e.message : e));
     }
-  });
+  }
 
   function readFileText(file, encoding){
     return new Promise((resolve, reject) => {
@@ -1391,12 +2090,21 @@
     });
   }
 
+  function readFileArrayBuffer(file){
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onerror = () => reject(fr.error || new Error("FileReader error"));
+      fr.onload = () => resolve(fr.result);
+      fr.readAsArrayBuffer(file);
+    });
+  }
+
   function resolveColumnIndexes(headers, cfg){
     if (headers){
       const iName = headerIndex(headers, ["商品名","[商品名]","品名"]);
       const iPrice = headerIndex(headers, ["単価","[単価]","卸単価","仕入単価"]);
-      const iSpec  = headerIndex(headers, ["規格・入数／単位","規格","[規格・入数／単位]","規格入数","規格/入数"]);
-      const iUnit  = headerIndex(headers, ["単位","[単位]","最終受領単位","[最終受領単位]"]);
+      const iSpec = headerIndex(headers, ["規格・入数／単位","規格","[規格・入数／単位]","規格入数","規格/入数"]);
+      const iUnit = headerIndex(headers, ["単位","[単位]","最終受領単位","[最終受領単位]"]);
 
       const override = (val, current) => {
         const s = safeText(val).trim();
@@ -1456,12 +2164,14 @@
     $("#kpiAliased").textContent = aliased.toLocaleString("ja-JP");
     $("#kpiReady").textContent = ready.toLocaleString("ja-JP");
   }
-
-  // ---------- Master ----------
+  // ---------------- Master ----------------
   $("#masterSearch").addEventListener("input", () => renderMaster());
   $("#masterFilter").addEventListener("change", () => renderMaster());
 
-  $("#btnMasterSaveNow").addEventListener("click", () => { saveState(false); toast("保存しました", "マスター更新"); });
+  $("#btnMasterSaveNow").addEventListener("click", () => {
+    saveState(false);
+    toast("保存しました", "マスター更新");
+  });
 
   $("#btnMasterClearOverrides").addEventListener("click", () => {
     if (!confirm("基準量の手入力(Manual)を全削除して、自動解析へ戻す？")) return;
@@ -1470,7 +2180,7 @@
       const b = state.masterBase[k];
       if (b.baseQtyManual){
         b.baseQtyManual = false;
-        const p = state.masterPrice[k] || {spec:"", priceUnit:""};
+        const p = state.masterPrice[k] || { spec:"", priceUnit:"" };
         const auto = autoDeriveBase(b.rawName, p.spec, p.priceUnit);
         b.baseTypeAuto = auto.baseType;
         b.baseQtyAuto = auto.baseQty;
@@ -1487,7 +2197,7 @@
   });
 
   $("#btnMasterExportJson").addEventListener("click", () => {
-    const defaultName = `master_merged_v0_6_${dateTag()}.json`;
+    const defaultName = `master_merged_v0_9_${dateTag()}.json`;
     const fn = askFilename(defaultName);
     if (!fn) return;
     const merged = getMergedMasterForExport();
@@ -1499,7 +2209,7 @@
   $("#btnMasterExportCsv").addEventListener("click", () => {
     const csv = masterToCsvMerged();
     const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
-    downloadBlob(blob, `master_merged_v0_6_${dateTag()}.csv`);
+    downloadBlob(blob, `master_merged_v0_9_${dateTag()}.csv`);
     toast("マスターCSV出力", "ダウンロード開始");
   });
 
@@ -1562,28 +2272,12 @@
 
   function csvCell(v){
     const s = safeText(v);
-    if (/[",\n\r]/.test(s)){ return `"${s.replace(/"/g,'""')}"`; }
+    if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
     return s;
   }
 
-  function normalizeSearch(s){
-    s = safeText(s);
-    s = normalizeZenkakuDigits(s);
-    s = s.toLowerCase();
-    s = s.replace(/\s+/g,"").trim();
-    s = s.replace(/[・･\-\–—_／\/\(\)\[\]【】「」'"“”’’,\.]/g,"");
-    return s;
-  }
-  function kataToHira(str){
-    return safeText(str).replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
-  }
-  function hiraToKata(str){
-    return safeText(str).replace(/[\u3041-\u3096]/g, ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
-  }
-
-  // --- Ver0.6: master render cache + partial row update ---
   let masterViewKeys = [];
-  const masterRowMap = new Map(); // key -> <tr>
+  const masterRowMap = new Map();
 
   function renderMaster(){
     const qRaw = safeText($("#masterSearch").value).trim();
@@ -1610,7 +2304,6 @@
     }
 
     entries.sort((a,b) => a.rawName.localeCompare(b.rawName, "ja"));
-
     masterViewKeys = entries.map(b => b.key);
 
     const tbody = $("#masterTbody");
@@ -1636,7 +2329,6 @@
           state.masterBase[key].updatedAt = nowIso();
           saveState();
           renderImportKPIs();
-          // 表自体は再描画しない（スクロール維持）
           updateMasterRowDisplay(key, { updateStatus:true, updateUpdatedAt:true });
         });
       }
@@ -1654,12 +2346,11 @@
       const priceEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="unitPrice"]`);
       if (priceEl){
         priceEl.addEventListener("input", () => {
-          if (!state.masterPrice[key]) state.masterPrice[key] = {key, unitPrice:0, priceUnit:"", spec:"", updatedAt: nowIso()};
+          if (!state.masterPrice[key]) state.masterPrice[key] = { key, unitPrice:0, priceUnit:"", spec:"", updatedAt: nowIso() };
           state.masterPrice[key].unitPrice = toNumber(priceEl.value);
           state.masterPrice[key].updatedAt = nowIso();
           saveState();
           renderImportKPIs();
-          // 行だけ更新
           updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateUpdatedAt:true });
         });
       }
@@ -1667,7 +2358,7 @@
       const unitEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="priceUnit"]`);
       if (unitEl){
         unitEl.addEventListener("change", () => {
-          if (!state.masterPrice[key]) state.masterPrice[key] = {key, unitPrice:0, priceUnit:"", spec:"", updatedAt: nowIso()};
+          if (!state.masterPrice[key]) state.masterPrice[key] = { key, unitPrice:0, priceUnit:"", spec:"", updatedAt: nowIso() };
           state.masterPrice[key].priceUnit = unitEl.value;
           state.masterPrice[key].updatedAt = nowIso();
 
@@ -1682,7 +2373,6 @@
             base.baseQty = auto.baseQty;
             base.updatedAt = nowIso();
 
-            // baseQty/baseType inputへ反映（全再描画しない）
             const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
             const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
             if (bqEl) bqEl.value = String(Number(base.baseQty)||0);
@@ -1733,7 +2423,7 @@
       if (btnRe){
         btnRe.addEventListener("click", () => {
           const base = state.masterBase[key];
-          const price = state.masterPrice[key] || {spec:"", priceUnit:""};
+          const price = state.masterPrice[key] || { spec:"", priceUnit:"" };
           const auto = autoDeriveBase(base.rawName, price.spec, price.priceUnit);
           base.baseTypeAuto = auto.baseType;
           base.baseQtyAuto = auto.baseQty;
@@ -1743,7 +2433,6 @@
           base.baseQtyManual = false;
           base.updatedAt = nowIso();
 
-          // inputs reflect
           const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
           const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
           if (bqEl) bqEl.value = String(Number(base.baseQty)||0);
@@ -1765,7 +2454,7 @@
           delete state.masterPrice[key];
           saveState(false);
           renderImportKPIs();
-          renderMaster(); // 削除は全再描画でOK
+          renderMaster();
           toast("削除", "マスターから削除した");
         });
       }
@@ -1777,10 +2466,9 @@
     if (!tr) return;
 
     const b = state.masterBase[key];
-    const p = state.masterPrice[key] || {unitPrice:0, priceUnit:"", spec:"", updatedAt:""};
+    const p = state.masterPrice[key] || { unitPrice:0, priceUnit:"", spec:"", updatedAt:"" };
     if (!b) return;
 
-    // status/auto hint in left cell
     if (opts && opts.updateStatus){
       const statusWrap = tr.querySelector(`[data-role="status"]`);
       if (statusWrap){
@@ -1798,7 +2486,6 @@
       }
     }
 
-    // auto detail
     if (opts && opts.updateAutoDetail){
       const autoDetailEl = tr.querySelector(`[data-role="autoDetail"]`);
       if (autoDetailEl){
@@ -1808,7 +2495,6 @@
       }
     }
 
-    // cost cell
     if (opts && opts.updateCost){
       const costWrap = tr.querySelector(`[data-role="costWrap"]`);
       const cost100 = tr.querySelector(`[data-role="cost100"]`);
@@ -1824,7 +2510,6 @@
       }
     }
 
-    // updated at line
     if (opts && opts.updateUpdatedAt){
       const upd = tr.querySelector(`[data-role="updatedAt"]`);
       if (upd){
@@ -1834,7 +2519,7 @@
   }
 
   function masterRowHtml(b){
-    const p = state.masterPrice[b.key] || {unitPrice:0, priceUnit:"", spec:"", updatedAt:""};
+    const p = state.masterPrice[b.key] || { unitPrice:0, priceUnit:"", spec:"", updatedAt:"" };
     const unitCost = getUnitCost(b.key);
     const ok = isReadyKey(b.key);
 
@@ -1859,7 +2544,7 @@
       : `<div class="tiny muted">レシピ側はこの名前で選ぶ</div>`;
 
     return `
-      <tr data-row="${escapeHtml(b.key)}">
+      <tr data-row="${escapeHtmlAttr(b.key)}">
         <td>
           <div style="font-weight:800;">${escapeHtml(b.rawName)}</div>
           <div class="tiny" data-role="status">${statusTag} ${autoHint}</div>
@@ -1912,9 +2597,8 @@
     `;
   }
 
-  // ---------- Recipe ----------
+  // ---------------- Recipe ----------------
   let recipeDraft = { id:null, name:"", yield:"", rows:[] };
-
   let recipeSelection = new Set(Array.isArray(state.ui.recipeSel) ? state.ui.recipeSel : []);
 
   $("#btnAddRow").addEventListener("click", () => { addRecipeRow(); renderRecipeRows(); recalcRecipe(); });
@@ -1934,7 +2618,10 @@
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s"){
       e.preventDefault();
       if (state.ui.lastTab === "recipe") saveRecipeDraft();
-      else if (state.ui.lastTab === "master") { saveState(false); toast("保存しました", "マスター"); }
+      else if (state.ui.lastTab === "master"){
+        saveState(false);
+        toast("保存しました", "マスター");
+      }
     }
   });
 
@@ -1946,6 +2633,7 @@
       qty: ""
     });
   }
+
   function getAliasForKey(rawKey){
     const b = state.masterBase[rawKey];
     if (!b) return "";
@@ -1965,12 +2653,12 @@
         r.ingText = getAliasForKey(r.rawKey) || buildAliasDefault(b ? b.rawName : r.rawKey);
       }
     }
+
     renderRecipeRows();
     recalcRecipe();
     renderRecipeList();
   }
 
-  // ---- Presets ----
   $("#btnAddPreset").addEventListener("click", () => {
     const label = safeText($("#presetLabel").value).trim();
     const qty = toNumber($("#presetQty").value);
@@ -1980,6 +2668,7 @@
       toast("プリセット追加NG", "量を正しく入れて");
       return;
     }
+
     const finalLabel = label || `${qty}${unit}`;
     const id = "p_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
     state.qtyPresets[unit] = Array.isArray(state.qtyPresets[unit]) ? state.qtyPresets[unit] : [];
@@ -2011,7 +2700,7 @@
       ...(state.qtyPresets.ml||[]).map(p => ({...p, unit:"ml"})),
       ...(state.qtyPresets.g||[]).map(p => ({...p, unit:"g"})),
       ...(state.qtyPresets["個"]||[]).map(p => ({...p, unit:"個"}))
-    ].sort((a,b) => (a.unit+b.label).localeCompare(b.unit+a.label, "ja"));
+    ].sort((a,b) => (a.unit+a.label).localeCompare(b.unit+b.label, "ja"));
 
     if (!all.length){
       box.innerHTML = `<div class="tiny muted">まだプリセットがない。例：リキュール 30ml / ビール 300ml</div>`;
@@ -2046,10 +2735,9 @@
     });
   }
 
-  // ---- Autocomplete ----
   const suggestState = {};
   function getSuggestState(rowId){
-    if (!suggestState[rowId]) suggestState[rowId] = {items:[], activeIndex:0, open:false};
+    if (!suggestState[rowId]) suggestState[rowId] = { items:[], activeIndex:0, open:false };
     return suggestState[rowId];
   }
   function isSuggestOpen(rowId){ return !!getSuggestState(rowId).open; }
@@ -2076,7 +2764,7 @@
                    autocomplete="off"
                    data-rid="${escapeHtmlAttr(r.id)}"
                    data-f="ing"
-                   placeholder="例：がむしろ / オレンジ / ぞっと など"
+                   placeholder="例：がむしろ / オレンジ / ぞっと"
                    value="${escapeHtmlAttr(r.ingText||"")}" />
             <div class="suggest" data-rid="${escapeHtmlAttr(r.id)}" data-role="suggest"></div>
           </div>
@@ -2137,11 +2825,12 @@
     st.activeIndex = 0;
     st.open = true;
 
-    sugEl.innerHTML = items.length ? items.map((it, idx) => suggestItemHtml(it, idx===0)).join("")
-                                  : `<div class="opt"><div><div class="l1">候補なし</div><div class="l2">エイリアス空白の品目は候補に出ない</div></div><div class="r">-</div></div>`;
+    sugEl.innerHTML = items.length
+      ? items.map((it, idx) => suggestItemHtml(it, idx===0)).join("")
+      : `<div class="opt"><div><div class="l1">候補なし</div><div class="l2">エイリアス空白の品目は候補に出ない</div></div><div class="r">-</div></div>`;
     sugEl.classList.add("show");
 
-    Array.from(sugEl.querySelectorAll(".opt[data-key]")).forEach((optEl) => {
+    Array.from(sugEl.querySelectorAll(`.opt[data-key]`)).forEach((optEl) => {
       optEl.addEventListener("mousedown", (e) => {
         e.preventDefault();
         const key = optEl.getAttribute("data-key");
@@ -2186,7 +2875,7 @@
     ].filter(Boolean).join(" / ");
 
     const unitStr = `${it.baseType}`;
-    const unitCost = it.unitCost > 0 ? `¥${fmt(it.unitCost, 4)}/${unitStr}` : `-`;
+    const unitCost = it.unitCost > 0 ? `¥${fmt(it.unitCost, 4)}/${unitStr}` : "-";
 
     return `
       <div class="opt ${isActive ? "active":""}" data-key="${escapeHtmlAttr(it.key)}">
@@ -2244,7 +2933,7 @@
       if (has(yN, qN) || has(yH, qNH) || has(yN, qNK)) score += 30;
       if (has(rN, qN) || has(rH, qNH) || has(rN, qNK)) score += 18;
 
-      if (score > 0) scored.push({b, score});
+      if (score > 0) scored.push({ b, score });
     }
 
     scored.sort((x,y) => y.score - x.score || safeText(x.b.alias).localeCompare(safeText(y.b.alias), "ja"));
@@ -2341,7 +3030,7 @@
   }
 
   function updateAllRecipeRowDisplays(){
-    for (const r of recipeDraft.rows){ updateRecipeRowDisplay(r.id); }
+    for (const r of recipeDraft.rows) updateRecipeRowDisplay(r.id);
   }
 
   function recalcRecipe(){
@@ -2374,6 +3063,7 @@
       const q = toNumber(r.qty);
       return t && q > 0 && !safeText(r.rawKey).trim();
     }).length;
+
     if (unresolved > 0){
       toast("未選択の材料あり", `候補から選んでない行が ${unresolved} 件ある`);
       return;
@@ -2386,13 +3076,20 @@
     if (!rows.length){ toast("材料が空", "材料と使用量を入れてから保存"); return; }
 
     const id = recipeDraft.id || cryptoId();
-    state.recipes[id] = { id, name, yield: $("#recipeYield").value, rows, updatedAt: nowIso() };
+    state.recipes[id] = {
+      id,
+      name,
+      yield: $("#recipeYield").value,
+      rows,
+      updatedAt: nowIso()
+    };
     saveState(false);
 
     recipeDraft.id = id;
     recipeDraft.name = name;
 
     renderRecipeList();
+    renderSales();
     toast("レシピ保存", name);
   }
 
@@ -2408,7 +3105,6 @@
     return total;
   }
 
-  // ---- Bulk delete controls ----
   const chkAllEl = $("#chkRecipeAll");
   const btnDelSel = $("#btnDeleteSelected");
   const btnDelAll = $("#btnDeleteAllRecipes");
@@ -2421,11 +3117,8 @@
 
   chkAllEl.addEventListener("change", () => {
     const ids = Object.keys(state.recipes);
-    if (chkAllEl.checked){
-      recipeSelection = new Set(ids);
-    } else {
-      recipeSelection.clear();
-    }
+    if (chkAllEl.checked) recipeSelection = new Set(ids);
+    else recipeSelection.clear();
     syncRecipeSelectionToState();
     renderRecipeList();
   });
@@ -2434,11 +3127,19 @@
     const ids = Array.from(recipeSelection);
     if (!ids.length) return;
     if (!confirm(`選択した ${ids.length} 件を削除する？`)) return;
-    for (const id of ids){ delete state.recipes[id]; }
+
+    for (const id of ids){
+      delete state.recipes[id];
+      for (const mk of Object.keys(state.menuRecipeLinks || {})){
+        if (state.menuRecipeLinks[mk] === id) delete state.menuRecipeLinks[mk];
+      }
+    }
+
     recipeSelection.clear();
     syncRecipeSelectionToState();
     saveState(false);
     renderRecipeList();
+    renderSales();
     toast("選択削除", `${ids.length}件`);
   });
 
@@ -2447,11 +3148,14 @@
     if (!n){ toast("全削除", "レシピがない"); return; }
     if (!confirm(`保存済みレシピを全削除する？（${n}件）`)) return;
     if (!confirm("本当に？（最終確認）")) return;
+
     state.recipes = {};
+    state.menuRecipeLinks = {};
     recipeSelection.clear();
     syncRecipeSelectionToState();
     saveState(false);
     renderRecipeList();
+    renderSales();
     toast("全削除", `${n}件`);
   });
 
@@ -2490,7 +3194,7 @@
     list.innerHTML = items.map(r => {
       const cost = calcRecipeCost(r);
       const y = toNumber(r.yield);
-      const per = (y>0) ? (cost / y) : null;
+      const per = (y > 0) ? (cost / y) : null;
       const checked = recipeSelection.has(r.id) ? "checked" : "";
       return `
         <div class="item">
@@ -2507,6 +3211,7 @@
           </div>
           <div class="row">
             <button class="btn small secondary" data-recipe="${escapeHtmlAttr(r.id)}" data-act="load">読み込み</button>
+            <button class="btn small secondary" data-recipe="${escapeHtmlAttr(r.id)}" data-act="duplicate">複製</button>
             <button class="btn small danger" data-recipe="${escapeHtmlAttr(r.id)}" data-act="delete">削除</button>
           </div>
         </div>
@@ -2515,6 +3220,7 @@
 
     for (const r of items){
       const btnLoad = document.querySelector(`[data-recipe="${cssEscape(r.id)}"][data-act="load"]`);
+      const btnDup = document.querySelector(`[data-recipe="${cssEscape(r.id)}"][data-act="duplicate"]`);
       const btnDel = document.querySelector(`[data-recipe="${cssEscape(r.id)}"][data-act="delete"]`);
       const chk = document.querySelector(`[data-recipe="${cssEscape(r.id)}"][data-act="sel"]`);
 
@@ -2527,22 +3233,51 @@
         });
       }
 
-      if (btnLoad){
-        btnLoad.addEventListener("click", () => loadRecipeToDraft(r.id));
-      }
+      if (btnLoad) btnLoad.addEventListener("click", () => loadRecipeToDraft(r.id));
+      if (btnDup) btnDup.addEventListener("click", () => duplicateRecipe(r.id));
 
       if (btnDel){
         btnDel.addEventListener("click", () => {
           if (!confirm(`削除する？\n\n${r.name}`)) return;
           delete state.recipes[r.id];
+          for (const mk of Object.keys(state.menuRecipeLinks || {})){
+            if (state.menuRecipeLinks[mk] === r.id) delete state.menuRecipeLinks[mk];
+          }
           recipeSelection.delete(r.id);
           syncRecipeSelectionToState();
           saveState(false);
           renderRecipeList();
+          renderSales();
           toast("削除", r.name);
         });
       }
     }
+  }
+
+  function duplicateRecipe(id){
+    const src = state.recipes[id];
+    if (!src) return;
+
+    let newName = `${src.name}（コピー）`;
+    const existingNames = new Set(Object.values(state.recipes).map(r => safeText(r.name).trim()));
+    if (existingNames.has(newName)){
+      let i = 2;
+      while (existingNames.has(`${src.name}（コピー${i}）`)) i++;
+      newName = `${src.name}（コピー${i}）`;
+    }
+
+    const newId = cryptoId();
+    state.recipes[newId] = {
+      id: newId,
+      name: newName,
+      yield: safeText(src.yield),
+      rows: Array.isArray(src.rows) ? src.rows.map(x => ({ rawKey: x.rawKey, qty: x.qty })) : [],
+      updatedAt: nowIso()
+    };
+    saveState(false);
+    renderRecipeList();
+    renderSales();
+    toast("レシピ複製", newName);
   }
 
   function loadRecipeToDraft(id){
@@ -2569,7 +3304,6 @@
     toast("レシピ読込", r.name);
   }
 
-  // ---- render recipe rows & bind ----
   let recipeDocClickBound = false;
   function renderRecipeRows(){
     const el = $("#recipeRows");
@@ -2585,11 +3319,12 @@
       if (ingEl && sugEl){
         ingEl.addEventListener("input", () => {
           r.ingText = ingEl.value;
-          if (!safeText(r.ingText).trim()){ r.rawKey = ""; }
+          if (!safeText(r.ingText).trim()) r.rawKey = "";
           showSuggestions(rowId);
           updateRecipeRowDisplay(rowId);
           recalcRecipe();
         });
+
         ingEl.addEventListener("focus", () => showSuggestions(rowId));
         ingEl.addEventListener("blur", () => setTimeout(() => hideSuggestions(rowId), 160));
         ingEl.addEventListener("keydown", (e) => {
@@ -2597,14 +3332,20 @@
           const list = getSuggestState(rowId).items;
           if (!list.length) return;
 
-          if (e.key === "ArrowDown"){ e.preventDefault(); moveSuggest(rowId, +1); }
-          else if (e.key === "ArrowUp"){ e.preventDefault(); moveSuggest(rowId, -1); }
-          else if (e.key === "Enter"){
+          if (e.key === "ArrowDown"){
+            e.preventDefault();
+            moveSuggest(rowId, +1);
+          } else if (e.key === "ArrowUp"){
+            e.preventDefault();
+            moveSuggest(rowId, -1);
+          } else if (e.key === "Enter"){
             e.preventDefault();
             const st = getSuggestState(rowId);
             const item = st.items[st.activeIndex] || st.items[0];
             if (item) selectCandidate(rowId, item.key);
-          } else if (e.key === "Escape"){ hideSuggestions(rowId); }
+          } else if (e.key === "Escape"){
+            hideSuggestions(rowId);
+          }
         });
       }
 
@@ -2632,14 +3373,952 @@
         if (state.ui.lastTab !== "recipe") return;
         const t = e.target;
         if (t && t.closest && (t.closest(".acWrap") || t.closest(".suggest"))) return;
-        for (const row of recipeDraft.rows){ hideSuggestions(row.id); }
+        for (const row of recipeDraft.rows) hideSuggestions(row.id);
       }, {capture:true});
     }
   }
 
-  // ---------- Data (Export/Import) ----------
+  // ---------------- Sales ----------------
+  state.menuSales = state.menuSales || { sourceName:"", importedAt:"", sheetName:"", items:{} };
+  state.menuSales.items = state.menuSales.items || {};
+  state.menuRecipeLinks = state.menuRecipeLinks || {};
+  state.salesHiddenMenus = state.salesHiddenMenus || {};
+  state.salesTypeOverrides = state.salesTypeOverrides || {};
+  state.ui = state.ui || {};
+  if (!Array.isArray(state.ui.salesMenuSel)) state.ui.salesMenuSel = [];
+  state.salesCfg = state.salesCfg || {
+    sheetName:"",
+    colMenuName:"D",
+    colQty:"F",
+    colSellPrice:"E",
+    colSalesAmount:"H"
+  };
+
+  let salesMenuSelection = new Set(Array.isArray(state.ui.salesMenuSel) ? state.ui.salesMenuSel : []);
+
+  const btnImportXlsxEl = $("#btnImportXlsx");
+  const btnAutoLinkMenuRecipeEl = $("#btnAutoLinkMenuRecipe");
+  const btnClearMenuSalesEl = $("#btnClearMenuSales");
+  const btnHideSelectedMenusEl = $("#btnHideSelectedMenus");
+  const btnUnhideAllMenusEl = $("#btnUnhideAllMenus");
+  const chkSalesMenuAllEl = $("#chkSalesMenuAll");
+
+function syncSalesSelectionToState(){
+    state.ui.salesMenuSel = Array.from(salesMenuSelection);
+    saveState();
+  }
+
+function isNomihodaiConsumeMenu(item){
+  return classifySalesItem(item).isFUsage;
+}
+
+  function isNomihodaiSalesMenu(item){
+    return classifySalesItem(item).isNomiSales;
+  }
+
+  function isSingleDrinkTarget(item){
+    return classifySalesItem(item).isSingle;
+  }
+
+  function isHiddenMenu(key){
+    return !!((state.salesHiddenMenus || {})[safeText(key)]);
+  }
+
+  function setHiddenMenu(key, flag){
+    key = safeText(key);
+    if (!key) return;
+    state.salesHiddenMenus = state.salesHiddenMenus || {};
+    if (flag) state.salesHiddenMenus[key] = true;
+    else delete state.salesHiddenMenus[key];
+  }
+
+  function getSalesAllItems(){
+    const items = Object.values((state.menuSales && state.menuSales.items) || {});
+    return items.sort((a,b) => {
+      const ao = Number(a.sortOrder ?? a.firstRow ?? 0);
+      const bo = Number(b.sortOrder ?? b.firstRow ?? 0);
+      if (ao !== bo) return ao - bo;
+      const af = Number(a.firstRow || 0);
+      const bf = Number(b.firstRow || 0);
+      if (af !== bf) return af - bf;
+      return safeText(a.menuName).localeCompare(safeText(b.menuName), "ja");
+    });
+  }
+
+  function getSalesVisibleItems(){
+    return getSalesAllItems().filter(it => !isSalesItemHidden(it));
+  }
+
+  function getLinkedRecipeIdForMenuKey(key){
+    const rid = safeText((state.menuRecipeLinks || {})[key]);
+    return (rid && state.recipes && state.recipes[rid]) ? rid : "";
+  }
+
+  function salesRowUnitCost(it){
+    const rid = getLinkedRecipeIdForMenuKey(it.key);
+    return rid ? recipeUnitCostById(rid) : 0;
+  }
+
+  function salesRowTotalCost(it){
+    const unitCost = salesRowUnitCost(it);
+    return unitCost * (Number(it.qty) || 0);
+  }
+
+  function getSalesSummary(items){
+    const out = {
+      visibleMenus: 0,
+      linkedMenus: 0,
+      totalQty: 0,
+      totalCost: 0,
+      totalSales: 0,
+      unlinked: 0,
+
+      nomihodaiSales: 0,
+      nomihodaiCost: 0,
+      nomihodaiRate: NaN,
+
+      singleSales: 0,
+      singleCost: 0,
+      singleRate: NaN,
+
+      combinedSales: 0,
+      combinedCost: 0,
+      combinedRate: NaN
+    };
+
+    for (const it of items){
+      out.visibleMenus++;
+      out.totalQty += Number(it.qty) || 0;
+      out.totalSales += Number(it.salesAmount) || 0;
+
+      const rid = getLinkedRecipeIdForMenuKey(it.key);
+      const hasLink = !!rid;
+      const rowCost = hasLink ? salesRowTotalCost(it) : 0;
+
+      if (hasLink){
+        out.linkedMenus++;
+        out.totalCost += rowCost;
+      } else {
+        out.unlinked++;
+      }
+
+      if (isNomihodaiSalesMenu(it)){
+        out.nomihodaiSales += Number(it.salesAmount) || 0;
+      }
+
+      if (isNomihodaiConsumeMenu(it) && hasLink){
+        out.nomihodaiCost += rowCost;
+      }
+
+      if (isSingleDrinkTarget(it)){
+        out.singleSales += Number(it.salesAmount) || 0;
+        if (hasLink) out.singleCost += rowCost;
+      }
+    }
+
+    out.nomihodaiRate = out.nomihodaiSales > 0 ? (out.nomihodaiCost / out.nomihodaiSales) : NaN;
+    out.singleRate = out.singleSales > 0 ? (out.singleCost / out.singleSales) : NaN;
+
+    out.combinedSales = out.nomihodaiSales + out.singleSales;
+    out.combinedCost = out.nomihodaiCost + out.singleCost;
+    out.combinedRate = out.combinedSales > 0 ? (out.combinedCost / out.combinedSales) : NaN;
+
+    return out;
+  }
+
+  function setTextIfExists(sel, value){
+    const el = $(sel);
+    if (el) el.textContent = value;
+  }
+
+  function setHtmlIfExists(sel, value){
+    const el = $(sel);
+    if (el) el.innerHTML = value;
+  }
+
+  function updateSalesBulkUI(totalVisible){
+    const selectedVisible = getSalesVisibleItems().filter(it => salesMenuSelection.has(it.key)).length;
+
+    if (chkSalesMenuAllEl){
+      if (totalVisible > 0 && selectedVisible === totalVisible){
+        chkSalesMenuAllEl.checked = true;
+        chkSalesMenuAllEl.indeterminate = false;
+      } else if (selectedVisible > 0 && selectedVisible < totalVisible){
+        chkSalesMenuAllEl.checked = false;
+        chkSalesMenuAllEl.indeterminate = true;
+      } else {
+        chkSalesMenuAllEl.checked = false;
+        chkSalesMenuAllEl.indeterminate = false;
+      }
+    }
+
+    if (btnHideSelectedMenusEl) btnHideSelectedMenusEl.disabled = selectedVisible === 0;
+
+setTextIfExists("#salesSelectedCountInfo", String(selectedVisible));
+    setTextIfExists("#salesVisibleCountInfo", String(totalVisible));
+    setTextIfExists("#salesHiddenCountInfo", String(getSalesAllItems().filter(it => isSalesItemHidden(it)).length));
+  }
+
+  if (chkSalesMenuAllEl){
+    chkSalesMenuAllEl.addEventListener("change", () => {
+      const visible = getSalesVisibleItems();
+      if (chkSalesMenuAllEl.checked){
+        for (const it of visible) salesMenuSelection.add(it.key);
+      } else {
+        for (const it of visible) salesMenuSelection.delete(it.key);
+      }
+      syncSalesSelectionToState();
+      renderSales();
+    });
+  }
+
+  if (btnHideSelectedMenusEl){
+    btnHideSelectedMenusEl.addEventListener("click", () => {
+      const keys = getSalesVisibleItems().filter(it => salesMenuSelection.has(it.key)).map(it => it.key);
+      if (!keys.length){
+        toast("非表示対象なし", "先にチェックを入れて");
+        return;
+      }
+      if (!confirm(`選択した ${keys.length} 件を非表示にする？`)) return;
+
+      for (const key of keys){
+        setHiddenMenu(key, true);
+        salesMenuSelection.delete(key);
+      }
+      syncSalesSelectionToState();
+      saveState(false);
+      renderSales();
+      toast("非表示にした", `${keys.length}件`);
+    });
+  }
+
+  if (btnUnhideAllMenusEl){
+    btnUnhideAllMenusEl.addEventListener("click", () => {
+      const hiddenCount = Object.keys(state.salesHiddenMenus || {}).length;
+      if (!hiddenCount){
+        toast("非表示メニューなし", "今は0件");
+        return;
+      }
+      if (!confirm(`非表示 ${hiddenCount} 件をすべて再表示する？`)) return;
+      state.salesHiddenMenus = {};
+      saveState(false);
+      renderSales();
+      toast("再表示した", `${hiddenCount}件`);
+    });
+  }
+
+  if (btnImportXlsxEl){
+    btnImportXlsxEl.addEventListener("click", async () => {
+      const fileEl = $("#xlsxFile");
+      const file = fileEl && fileEl.files ? fileEl.files[0] : null;
+      if (!file){
+        toast("xlsx未選択", "ファイルを選んでから取り込み");
+        return;
+      }
+      await importXlsxFile(file);
+    });
+  }
+
+  if (btnAutoLinkMenuRecipeEl){
+    btnAutoLinkMenuRecipeEl.addEventListener("click", () => {
+      let cnt = 0;
+      for (const item of getSalesAllItems()){
+        const current = getLinkedRecipeIdForMenuKey(item.key);
+        if (current) continue;
+        const rid = findBestRecipeForMenu(item.menuName);
+        if (rid){
+          state.menuRecipeLinks[item.key] = rid;
+          cnt++;
+        }
+      }
+      saveState(false);
+      renderSales();
+      toast("レシピ自動候補あて", `${cnt}件`);
+    });
+  }
+
+  if (btnClearMenuSalesEl){
+    btnClearMenuSalesEl.addEventListener("click", () => {
+      if (!confirm("売上読込結果をクリアする？（紐づけ設定と非表示設定は残す）")) return;
+      state.menuSales = { sourceName:"", importedAt:"", sheetName:"", items:{} };
+      salesMenuSelection.clear();
+      syncSalesSelectionToState();
+      saveState(false);
+      renderSales();
+      toast("読込結果クリア", "売上メニュー一覧を空にした");
+    });
+  }
+
+  const salesSearchEl = $("#salesSearch");
+  const salesFilterEl = $("#salesFilter");
+  const chkShowHiddenSalesEl = $("#chkShowHiddenSales");
+
+  if (salesSearchEl){
+    salesSearchEl.addEventListener("input", () => renderSales());
+  }
+  if (salesFilterEl){
+    salesFilterEl.addEventListener("change", () => renderSales());
+  }
+  if (chkShowHiddenSalesEl){
+    chkShowHiddenSalesEl.addEventListener("change", () => {
+      state.ui.salesShowHidden = !!chkShowHiddenSalesEl.checked;
+      saveState(false);
+      renderSales();
+    });
+  }
+
+  function isSalesRowUnlinked(it){
+    if (isNomihodaiSalesMenu(it)) return false;
+    return !getLinkedRecipeIdForMenuKey(it.key);
+  }
+
+  function getSalesFilteredItems(allItems){
+    const q = normalizeSearch(salesSearchEl ? salesSearchEl.value : "");
+    const filter = salesFilterEl ? salesFilterEl.value : "all";
+    const showHidden = chkShowHiddenSalesEl ? !!chkShowHiddenSalesEl.checked : false;
+
+    let items = allItems.slice();
+
+    if (!showHidden && filter !== "hidden"){
+      items = items.filter(it => !isSalesItemHidden(it));
+    }
+
+    if (filter === "nomiSales"){
+      items = items.filter(it => isNomihodaiSalesMenu(it));
+    } else if (filter === "fUsage"){
+      items = items.filter(it => isNomihodaiConsumeMenu(it));
+    } else if (filter === "single"){
+      items = items.filter(it => isSingleDrinkTarget(it));
+    } else if (filter === "unlinked"){
+      items = items.filter(it => isSalesRowUnlinked(it));
+    } else if (filter === "hidden"){
+      items = items.filter(it => isSalesItemHidden(it));
+    }
+
+    if (q){
+      items = items.filter(it => normalizeSearch(it.menuName).includes(q));
+    }
+
+    return items;
+  }
+
+  function getSalesCategoryGroups(allItems){
+    const largeMap = new Map();
+    const middleMap = new Map();
+
+    for (const it of allItems){
+      const large = safeText(it.largeCategory).trim() || "未分類";
+      const middle = safeText(it.middleCategory).trim() || "未分類";
+
+      if (!largeMap.has(large)){
+        largeMap.set(large, { name: large, count: 0 });
+      }
+      largeMap.get(large).count++;
+
+      const middleKey = buildMiddleCategoryKey(large, middle);
+      if (!middleMap.has(middleKey)){
+        middleMap.set(middleKey, { large, middle, count: 0 });
+      }
+      middleMap.get(middleKey).count++;
+    }
+
+    return {
+      largeList: Array.from(largeMap.values()).sort((a,b) => a.name.localeCompare(b.name, "ja")),
+      middleList: Array.from(middleMap.values()).sort((a,b) =>
+        a.large.localeCompare(b.large, "ja") || a.middle.localeCompare(b.middle, "ja"))
+    };
+  }
+
+  function renderSalesCategoryLists(allItems){
+    const largeBox = $("#salesLargeCategoryList");
+    const middleBox = $("#salesMiddleCategoryList");
+    const infoEl = $("#salesCategoryHiddenInfo");
+    if (!largeBox || !middleBox) return;
+
+    const { largeList, middleList } = getSalesCategoryGroups(allItems);
+
+    if (infoEl){
+      infoEl.textContent = `大${Object.keys(state.salesHiddenLargeCategories || {}).length} / 中${Object.keys(state.salesHiddenMiddleCategories || {}).length}`;
+    }
+
+    if (!largeList.length){
+      largeBox.innerHTML = `<div class="tiny muted">xlsx取込後にここへ一覧が出ます。</div>`;
+      middleBox.innerHTML = `<div class="tiny muted">xlsx取込後にここへ一覧が出ます。</div>`;
+      return;
+    }
+
+    largeBox.innerHTML = largeList.map(cat => `
+      <label class="checkItem">
+        <input type="checkbox" data-largecat="${escapeHtmlAttr(cat.name)}" ${isHiddenLargeCategory(cat.name) ? "checked" : ""} />
+        <div style="flex:1 1 auto;">
+          <div class="name">${escapeHtml(cat.name)}</div>
+          <div class="meta">メニュー数：<span class="mono">${cat.count}</span></div>
+        </div>
+      </label>
+    `).join("");
+
+    middleBox.innerHTML = middleList.map(cat => {
+      const largeHidden = isHiddenLargeCategory(cat.large);
+      const checked = largeHidden || isHiddenMiddleCategory(cat.large, cat.middle);
+      return `
+        <label class="checkItem">
+          <input type="checkbox"
+                 data-largecat="${escapeHtmlAttr(cat.large)}"
+                 data-middlecat="${escapeHtmlAttr(cat.middle)}"
+                 ${checked ? "checked" : ""}
+                 ${largeHidden ? "disabled" : ""} />
+          <div style="flex:1 1 auto;">
+            <div class="name">${escapeHtml(cat.middle)}</div>
+            <div class="meta">${escapeHtml(cat.large)} / メニュー数：<span class="mono">${cat.count}</span></div>
+          </div>
+        </label>
+      `;
+    }).join("");
+
+    Array.from(largeBox.querySelectorAll("[data-largecat]")).forEach(chk => {
+      chk.addEventListener("change", () => {
+        const large = chk.getAttribute("data-largecat");
+        setHiddenLargeCategory(large, chk.checked);
+        saveState(false);
+        renderSales();
+      });
+    });
+
+    Array.from(middleBox.querySelectorAll("[data-middlecat]")).forEach(chk => {
+      chk.addEventListener("change", () => {
+        const large = chk.getAttribute("data-largecat");
+        const middle = chk.getAttribute("data-middlecat");
+        setHiddenMiddleCategory(large, middle, chk.checked);
+        saveState(false);
+        renderSales();
+      });
+    });
+  }
+
+  function renderHiddenMenuList(){
+    const box = $("#hiddenMenuList");
+    if (!box) return;
+
+    const hiddenItems = getSalesAllItems().filter(it => isSalesItemHidden(it));
+    setTextIfExists("#hiddenMenuCountInfo", String(hiddenItems.length));
+
+    if (!hiddenItems.length){
+      box.innerHTML = `<div class="tiny muted">非表示メニューはまだありません。</div>`;
+      return;
+    }
+
+    box.innerHTML = hiddenItems.map(it => {
+      const reason = getSalesItemHiddenReason(it);
+      const reasonText =
+        reason === "large" ? `大分類「${safeText(it.largeCategory || "未分類")}」で非表示` :
+        reason === "middle" ? `中分類「${safeText(it.middleCategory || "未分類")}」で非表示` :
+        "メニュー個別で非表示";
+
+      const actionHtml = reason === "manual"
+        ? `<button class="btn small secondary" data-menukey="${escapeHtmlAttr(it.key)}" data-act="unhideOne">再表示</button>`
+        : `<div class="tiny muted">カテゴリ欄で解除</div>`;
+
+      return `
+        <div class="checkItem">
+          <div style="flex:1 1 auto;">
+            <div class="name">${escapeHtml(it.menuName)}</div>
+            <div class="meta">
+              ${escapeHtml(reasonText)}<br/>
+              ${escapeHtml(safeText(it.largeCategory || "未分類"))} / ${escapeHtml(safeText(it.middleCategory || "未分類"))}<br/>
+              出数：<span class="mono">${(Number(it.qty)||0).toLocaleString("ja-JP")}</span> /
+              売上：<span class="mono">${yen(Number(it.salesAmount)||0)}</span>
+            </div>
+          </div>
+          <div class="salesActionWrap">
+            ${actionHtml}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    Array.from(box.querySelectorAll(`[data-act="unhideOne"]`)).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.getAttribute("data-menukey");
+        if (!key) return;
+        setHiddenMenu(key, false);
+        saveState(false);
+        renderSales();
+        toast("再表示", safeText(key));
+      });
+    });
+  }
+  const xlsxDropZone = $("#xlsxDropZone");
+  const xlsxDropInput = $("#xlsxDropInput");
+
+  if (xlsxDropZone){
+    xlsxDropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      xlsxDropZone.classList.add("over");
+    });
+    xlsxDropZone.addEventListener("dragleave", () => xlsxDropZone.classList.remove("over"));
+    xlsxDropZone.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      xlsxDropZone.classList.remove("over");
+      const file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+      if (!file) return;
+      await importXlsxFile(file);
+    });
+  }
+
+  if (xlsxDropInput){
+    xlsxDropInput.addEventListener("change", async () => {
+      const file = xlsxDropInput.files && xlsxDropInput.files[0] ? xlsxDropInput.files[0] : null;
+      if (file) await importXlsxFile(file);
+      xlsxDropInput.value = "";
+    });
+  }
+
+  async function importXlsxFile(file){
+    try{
+      if (typeof XLSX === "undefined"){
+        toast("xlsxライブラリ未読込", "ネット接続かCDN読込を確認して");
+        return;
+      }
+
+      const buf = await readFileArrayBuffer(file);
+      const wb = XLSX.read(buf, { type: "array" });
+
+      const preferredSheet = safeText(state.salesCfg && state.salesCfg.sheetName).trim();
+      const sheetName = (preferredSheet && wb.SheetNames.includes(preferredSheet)) ? preferredSheet : wb.SheetNames[0];
+
+      if (!sheetName){
+        toast("シートなし", "xlsxのシートが見つからない");
+        return;
+      }
+
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+
+      const colInfo = resolveSalesColumnIndexes(rows, state.salesCfg || {});
+      const idxMenu = colInfo.idxMenu;
+      const idxQty = colInfo.idxQty;
+      const idxSell = colInfo.idxSell;
+      const idxSales = colInfo.idxSales;
+      const headerRow = colInfo.headerRow;
+
+      if ([idxMenu, idxQty, idxSell, idxSales].some(v => v < 0)){
+        toast("列設定エラー", "売上xlsxの列設定を確認して");
+        return;
+      }
+
+      const acc = {};
+      let sortCounter = 0;
+      let currentLargeCategory = "";
+      let currentMiddleCategory = "";
+
+      for (let i = (headerRow >= 0 ? headerRow + 1 : 0); i < rows.length; i++){
+        const row = Array.isArray(rows[i]) ? rows[i] : [];
+
+        const largeCandidate = cleanSalesCategoryName(row[0]);
+        const middleCandidate = cleanSalesCategoryName(row[1]);
+
+        if (largeCandidate) currentLargeCategory = largeCandidate;
+        if (middleCandidate) currentMiddleCategory = middleCandidate;
+
+        const rawMenuName = safeText(row[idxMenu]).trim();
+        const menuName = cleanSalesMenuName(rawMenuName);
+
+        if (!menuName) continue;
+        if (/計\s*$/.test(menuName)) continue;
+
+        const qty = toNumber(row[idxQty]);
+        const sellPrice = toNumber(row[idxSell]);
+        const salesAmountRaw = toNumber(row[idxSales]);
+
+        if (!(qty > 0)) continue;
+
+        const nomiConsume = hasNomihodaiFPrefix(menuName);
+        const nomiSales = /飲み放題\s*$/.test(menuName);
+        const hasSell = sellPrice > 0;
+        const hasSales = salesAmountRaw > 0;
+        const isTarget = hasSell || hasSales || nomiConsume || nomiSales;
+
+        if (!isTarget) continue;
+
+        const key = normKey(menuName);
+        if (!key) continue;
+
+        if (!acc[key]){
+          acc[key] = {
+            key,
+            menuName,
+            largeCategory: currentLargeCategory || "未分類",
+            middleCategory: currentMiddleCategory || "未分類",
+            qty: 0,
+            sellPrice: 0,
+            salesAmount: 0,
+            isNomihodai: nomiConsume,
+            isNomihodaiConsume: nomiConsume,
+            isNomihodaiSales: nomiSales,
+            sourceRows: [],
+            firstRow: i + 1,
+            sortOrder: sortCounter++,
+            _sellNum: 0,
+            _sellDen: 0
+          };
+        }
+
+        const it = acc[key];
+        it.qty += qty;
+        it.isNomihodai = !!(it.isNomihodai || nomiConsume);
+        it.isNomihodaiConsume = !!(it.isNomihodaiConsume || nomiConsume);
+        it.isNomihodaiSales = !!(it.isNomihodaiSales || nomiSales);
+        it.sourceRows.push(i + 1);
+
+        const salesAmount = salesAmountRaw > 0 ? salesAmountRaw : (sellPrice > 0 ? sellPrice * qty : 0);
+        it.salesAmount += salesAmount;
+
+        if (sellPrice > 0){
+          it._sellNum += sellPrice * qty;
+          it._sellDen += qty;
+        }
+      }
+
+      for (const k of Object.keys(acc)){
+        const it = acc[k];
+        it.sellPrice = it._sellDen > 0 ? (it._sellNum / it._sellDen) : 0;
+        delete it._sellNum;
+        delete it._sellDen;
+      }
+
+      state.menuSales = {
+        sourceName: file.name,
+        importedAt: nowIso(),
+        sheetName,
+        items: acc
+      };
+
+      salesMenuSelection.clear();
+      syncSalesSelectionToState();
+      saveState(false);
+      renderSales();
+      toast(
+        "xlsx取り込み完了",
+        `${Object.keys(acc).length} メニュー / ${colInfo.autoDetected ? "列自動判定" : "設定列使用"}`
+      );    } catch(e){
+      console.error(e);
+      toast("xlsx取り込み失敗", String(e && e.message ? e.message : e));
+    }
+  }
+
+  function recipeSelectOptions(selectedId){
+    const recipes = Object.values(state.recipes || {}).sort((a,b) => safeText(a.name).localeCompare(safeText(b.name), "ja"));
+    let html = `<option value="">（未選択）</option>`;
+    for (const r of recipes){
+      html += `<option value="${escapeHtmlAttr(r.id)}" ${selectedId===r.id ? "selected" : ""}>${escapeHtml(r.name)}</option>`;
+    }
+    return html;
+  }
+
+  function buildMenuMatchVariants(menuName){
+    const raw = safeText(menuName).trim();
+    const arr = new Set();
+
+    const n1 = normalizeSearch(raw);
+    if (n1) arr.add(n1);
+
+    const noLeadF = raw.replace(/^[FＦ][\s　]+/,"");
+    const n2 = normalizeSearch(noLeadF);
+    if (n2) arr.add(n2);
+
+    const noPrefix = raw.replace(/^(ｾﾚｸﾄ\)|select\))/i, "");
+    const n3 = normalizeSearch(noPrefix);
+    if (n3) arr.add(n3);
+
+    const noBoth = noLeadF.replace(/^(ｾﾚｸﾄ\)|select\))/i, "");
+    const n4 = normalizeSearch(noBoth);
+    if (n4) arr.add(n4);
+
+    const noNomiSuffix = raw.replace(/飲み放題\s*$/,"").trim();
+    const n5 = normalizeSearch(noNomiSuffix);
+    if (n5) arr.add(n5);
+
+    const noLeadFNoNomi = noLeadF.replace(/飲み放題\s*$/,"").trim();
+    const n6 = normalizeSearch(noLeadFNoNomi);
+    if (n6) arr.add(n6);
+
+    return Array.from(arr).filter(Boolean);
+  }
+
+  function findBestRecipeForMenu(menuName){
+    const variants = buildMenuMatchVariants(menuName);
+    const recipes = Object.values(state.recipes || {});
+    for (const r of recipes){
+      const rn = normalizeSearch(r.name);
+      if (variants.includes(rn)) return r.id;
+    }
+    for (const r of recipes){
+      const rn = normalizeSearch(r.name);
+      if (variants.some(v => v && rn && (v.includes(rn) || rn.includes(v)))) return r.id;
+    }
+    return "";
+  }
+
+  function salesTypeTags(it){
+    const tags = [];
+    if (isNomihodaiSalesMenu(it)) tags.push(`<span class="tag good">飲み放題売上</span>`);
+    if (isNomihodaiConsumeMenu(it)) tags.push(`<span class="tag warn">F飲み放題消化</span>`);
+    if (!isNomihodaiSalesMenu(it) && !isNomihodaiConsumeMenu(it) && Number(it.sellPrice) > 0){
+      tags.push(`<span class="tag">単品</span>`);
+    }
+    if (!tags.length) tags.push(`<span class="tag">その他</span>`);
+    return tags.join(" ");
+  }
+
+  function renderSales(){
+    const allItems = getSalesAllItems();
+
+    if (chkShowHiddenSalesEl){
+      chkShowHiddenSalesEl.checked = !!state.ui.salesShowHidden;
+    }
+
+    const summaryBaseItems = (chkShowHiddenSalesEl && chkShowHiddenSalesEl.checked)
+      ? allItems.slice()
+      : allItems.filter(it => !isSalesItemHidden(it));
+
+    const items = getSalesFilteredItems(allItems);
+    const tbody = $("#salesTbody");
+
+    setTextIfExists(
+      "#salesSourceInfo",
+      state.menuSales && state.menuSales.sourceName
+        ? `${state.menuSales.sourceName} / ${state.menuSales.sheetName || "-"}`
+        : "未読込"
+    );
+    setTextIfExists(
+      "#salesImportedAtInfo",
+      state.menuSales && state.menuSales.importedAt
+        ? `読込：${shortTime(state.menuSales.importedAt)}`
+        : "未読込"
+    );
+
+    const validKeys = new Set(allItems.map(it => it.key));
+    salesMenuSelection = new Set(Array.from(salesMenuSelection).filter(k => validKeys.has(k)));
+    syncSalesSelectionToState();
+
+    const s = getSalesSummary(summaryBaseItems);
+    const hiddenCount = allItems.filter(it => isSalesItemHidden(it)).length;
+
+    setTextIfExists("#kpiSalesMenus", allItems.length.toLocaleString("ja-JP"));
+    setTextIfExists("#kpiSalesShown", items.length.toLocaleString("ja-JP"));
+    setTextIfExists("#kpiSalesHidden", hiddenCount.toLocaleString("ja-JP"));
+    setTextIfExists("#kpiSalesLinked", s.linkedMenus.toLocaleString("ja-JP"));
+    setTextIfExists("#kpiSalesQty", s.totalQty.toLocaleString("ja-JP"));
+
+    setTextIfExists("#sumNomiSales", yen(s.nomihodaiSales));
+    setTextIfExists("#sumNomiCost", yen(s.nomihodaiCost));
+    setTextIfExists("#sumNomiRate", Number.isFinite(s.nomihodaiRate) ? pct(s.nomihodaiRate) : "-");
+    setTextIfExists(
+      "#sumNomiUnlinked",
+      String(summaryBaseItems.filter(it => isNomihodaiConsumeMenu(it) && !getLinkedRecipeIdForMenuKey(it.key)).length)
+    );
+
+    setTextIfExists("#sumSingleSales", yen(s.singleSales));
+    setTextIfExists("#sumSingleCost", yen(s.singleCost));
+    setTextIfExists("#sumSingleRate", Number.isFinite(s.singleRate) ? pct(s.singleRate) : "-");
+    setTextIfExists(
+      "#sumSingleUnlinked",
+      String(summaryBaseItems.filter(it => isSingleDrinkTarget(it) && !getLinkedRecipeIdForMenuKey(it.key)).length)
+    );
+
+    setTextIfExists("#sumTotalSales", yen(s.combinedSales));
+    setTextIfExists("#sumTotalCost", yen(s.combinedCost));
+    setTextIfExists("#sumTotalRate", Number.isFinite(s.combinedRate) ? pct(s.combinedRate) : "-");
+    setTextIfExists("#sumHiddenMenus", String(hiddenCount));
+
+    setTextIfExists("#salesTotalSalesInfo", yen(s.combinedSales));
+    setTextIfExists("#salesTotalRateInfo", Number.isFinite(s.combinedRate) ? pct(s.combinedRate) : "-");
+    setTextIfExists("#salesUnlinkedInfo", String(summaryBaseItems.filter(it => isSalesRowUnlinked(it)).length));
+
+    updateSalesBulkUI(items.length);
+    renderSalesCategoryLists(allItems);
+    renderHiddenMenuList();
+
+    if (!tbody) return;
+
+    if (!items.length){
+      tbody.innerHTML = `<tr><td colspan="13"><div class="tiny muted">表示対象のメニューがありません。</div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = items.map(it => {
+      const cls = classifySalesItem(it);
+      const rid = getLinkedRecipeIdForMenuKey(it.key);
+      const recipe = rid ? state.recipes[rid] : null;
+      const unitCost = recipe ? recipeUnitCostById(rid) : 0;
+      const totalCostRow = recipe ? (unitCost * (Number(it.qty) || 0)) : 0;
+      const salesAmount = Number(it.salesAmount) || 0;
+      const rate = salesAmount > 0 ? (totalCostRow / salesAmount) : NaN;
+      const selected = salesMenuSelection.has(it.key) ? "checked" : "";
+      const manualType = getSalesTypeOverride(it.key);
+
+      const hiddenReason = getSalesItemHiddenReason(it);
+      const hidden = !!hiddenReason;
+      const canLink = cls.canLink;
+
+      const categoryText = `${safeText(it.largeCategory || "未分類")} / ${safeText(it.middleCategory || "未分類")}`;
+
+      const stateHtml = hidden
+        ? (
+            hiddenReason === "large"
+              ? `<span class="tag warn">大分類で非表示</span>`
+              : hiddenReason === "middle"
+                ? `<span class="tag warn">中分類で非表示</span>`
+                : `<span class="tag warn">個別非表示</span>`
+          )
+        : recipe
+          ? `<span class="tag good">紐づけ済み</span>`
+          : canLink
+            ? `<span class="tag bad">未紐づけ</span>`
+            : `<span class="tag">売上集計行</span>`;
+
+      const actionHtml = hidden
+        ? (
+            hiddenReason === "manual"
+              ? `<button class="btn small secondary" data-menukey="${escapeHtmlAttr(it.key)}" data-act="unhideMenu">再表示</button>`
+              : `<div class="tiny muted">カテゴリ欄で解除</div>`
+          )
+        : `<button class="btn small danger" data-menukey="${escapeHtmlAttr(it.key)}" data-act="hideMenu">非表示</button>`;
+
+      const manualBadge = manualType
+        ? `<span class="tag warn">手動分類</span>`
+        : `<span class="tag">自動分類</span>`;
+
+      const currentTypeLabel =
+        cls.isNomiSales ? "飲み放題売上" :
+        cls.isFUsage ? "F飲み放題消化" :
+        cls.isSingle ? "単品" : "その他";
+
+      return `
+        <tr class="${hidden ? "isHiddenRow" : ""}">
+          <td class="right">
+            <input class="chk" type="checkbox" data-menukey="${escapeHtmlAttr(it.key)}" data-act="salesSel" ${selected} />
+          </td>
+          <td>
+            <div class="salesMenuName">${escapeHtml(it.menuName)}</div>
+            <div class="salesMenuSub">${escapeHtml(categoryText)}</div>
+            <div class="salesMenuSub mono">${escapeHtml(it.key)}</div>
+          </td>
+<td>
+  <div class="salesTypeWrap">${salesTypeTags(it)}</div>
+</td>
+<td>
+  <div class="salesActionWrap">
+    <select data-menukey="${escapeHtmlAttr(it.key)}" data-act="typeOverride">
+      <option value="" ${manualType === "" ? "selected" : ""}>分類：自動判定</option>
+      <option value="nomiSales" ${manualType === "nomiSales" ? "selected" : ""}>分類：飲み放題売上</option>
+      <option value="fUsage" ${manualType === "fUsage" ? "selected" : ""}>分類：F飲み放題消化</option>
+      <option value="single" ${manualType === "single" ? "selected" : ""}>分類：単品</option>
+    </select>
+    ${actionHtml}
+  </div>
+</td>
+<td class="right mono">${(Number(it.qty)||0).toLocaleString("ja-JP")}</td>
+<td class="right mono">${(Number(it.sellPrice)||0) > 0 ? yen(it.sellPrice) : "-"}</td>
+<td class="right mono">${salesAmount > 0 ? yen(salesAmount) : "-"}</td>
+<td>
+  ${
+    canLink
+      ? `
+        <select data-menukey="${escapeHtmlAttr(it.key)}" data-f="recipeLink">
+          ${recipeSelectOptions(rid)}
+        </select>
+        <div class="tiny ${recipe ? "muted" : "bad"}" data-menukey="${escapeHtmlAttr(it.key)}" data-role="recipeInfo">
+          ${recipe ? `出来高 ${safeText(recipe.yield || "-")} / ${escapeHtml(recipe.name)}` : "未紐づけ"}
+        </div>
+      `
+      : `
+        <div class="tiny muted">飲み放題売上集計行のため、ここは紐づけしません</div>
+      `
+  }
+</td>
+<td class="right mono">${recipe ? yen(unitCost) : "-"}</td>
+<td class="right mono">${recipe ? yen(totalCostRow) : "-"}</td>
+<td class="right mono">${recipe && salesAmount > 0 ? pct(rate) : "-"}</td>
+<td>
+  <div class="salesStateWrap">
+    ${stateHtml}
+    ${manualBadge}
+    <div class="tiny muted">${escapeHtml(currentTypeLabel)}</div>
+  </div>
+</td>
+<td class="mono tiny">${escapeHtml((it.sourceRows || []).slice(0,8).join(", "))}${(it.sourceRows || []).length > 8 ? "..." : ""}</td>
+        </tr>
+      `;
+    }).join("");
+
+    Array.from(tbody.querySelectorAll(`[data-f="recipeLink"]`)).forEach(sel => {
+      sel.addEventListener("change", () => {
+        const key = sel.getAttribute("data-menukey");
+        const recipeId = sel.value;
+        if (!key) return;
+        if (recipeId) state.menuRecipeLinks[key] = recipeId;
+        else delete state.menuRecipeLinks[key];
+        saveState(false);
+        renderSales();
+      });
+    });
+
+    Array.from(tbody.querySelectorAll(`[data-act="typeOverride"]`)).forEach(sel => {
+      sel.addEventListener("change", () => {
+        const key = sel.getAttribute("data-menukey");
+        if (!key) return;
+
+        setSalesTypeOverride(key, sel.value);
+        saveState(false);
+        renderSales();
+
+        toast(
+          "分類更新",
+          sel.value ? `${safeText(key)} を手動設定` : `${safeText(key)} を自動判定に戻した`
+        );
+      });
+    });
+
+    Array.from(tbody.querySelectorAll(`[data-act="salesSel"]`)).forEach(chk => {
+      chk.addEventListener("change", () => {
+        const key = chk.getAttribute("data-menukey");
+        if (!key) return;
+        if (chk.checked) salesMenuSelection.add(key);
+        else salesMenuSelection.delete(key);
+        syncSalesSelectionToState();
+        updateSalesBulkUI(items.length);
+      });
+    });
+
+    Array.from(tbody.querySelectorAll(`[data-act="hideMenu"]`)).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.getAttribute("data-menukey");
+        if (!key) return;
+        setHiddenMenu(key, true);
+        salesMenuSelection.delete(key);
+        syncSalesSelectionToState();
+        saveState(false);
+        renderSales();
+        toast("非表示", safeText(key));
+      });
+    });
+
+    Array.from(tbody.querySelectorAll(`[data-act="unhideMenu"]`)).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const key = btn.getAttribute("data-menukey");
+        if (!key) return;
+        setHiddenMenu(key, false);
+        saveState(false);
+        renderSales();
+        toast("再表示", safeText(key));
+      });
+    });
+  }
+
+  // ---------------- Data ----------------
   $("#btnExportAll").addEventListener("click", () => {
-    const defaultName = `cost_recipe_all_v0_6_${dateTag()}.json`;
+    const defaultName = `cost_recipe_all_v0_9_${dateTag()}.json`;
     const fn = askFilename(defaultName);
     if (!fn) return;
     const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
@@ -2649,6 +4328,7 @@
 
   $("#btnCopyAll").addEventListener("click", async () => {
     const ta = $("#importJsonArea");
+    if (!ta) return;
     ta.select();
     try{
       await navigator.clipboard.writeText(ta.value);
@@ -2659,12 +4339,14 @@
   });
 
   $("#btnClearImportArea").addEventListener("click", () => {
-    $("#importJsonArea").value = "";
+    const area = $("#importJsonArea");
+    if (area) area.value = "";
     toast("クリア", "貼り付けエリアを空にした");
   });
 
   $("#btnImportAll").addEventListener("click", () => {
-    const s = $("#importJsonArea").value;
+    const area = $("#importJsonArea");
+    const s = area ? area.value : "";
     if (!safeText(s).trim()){
       toast("空っぽ", "JSONを貼ってから");
       return;
@@ -2682,28 +4364,63 @@
   const dropZone = $("#jsonDropZone");
   const jsonFileInput = $("#jsonFileInput");
 
-  dropZone.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    dropZone.classList.add("over");
-  });
-  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("over"));
-  dropZone.addEventListener("drop", (e) => {
-    e.preventDefault();
-    dropZone.classList.remove("over");
-    const file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
-    if (file) importJsonFile(file);
-  });
+  if (dropZone){
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("over");
+    });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("over"));
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("over");
+      const file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+      if (file) importJsonFile(file);
+    });
+  }
 
-  jsonFileInput.addEventListener("change", () => {
-    const file = jsonFileInput.files && jsonFileInput.files[0] ? jsonFileInput.files[0] : null;
-    if (file) importJsonFile(file);
-    jsonFileInput.value = "";
-  });
+  if (jsonFileInput){
+    jsonFileInput.addEventListener("change", () => {
+      const file = jsonFileInput.files && jsonFileInput.files[0] ? jsonFileInput.files[0] : null;
+      if (file) importJsonFile(file);
+      jsonFileInput.value = "";
+    });
+  }
+
+  const csvDropZone = $("#csvDropZone");
+  const csvDropInput = $("#csvDropInput");
+
+  if (csvDropZone){
+    csvDropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      csvDropZone.classList.add("over");
+    });
+    csvDropZone.addEventListener("dragleave", () => csvDropZone.classList.remove("over"));
+    csvDropZone.addEventListener("drop", async (e) => {
+      e.preventDefault();
+      csvDropZone.classList.remove("over");
+      const file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+      if (!file) return;
+      if (!/\.csv$/i.test(file.name) && !safeText(file.type).includes("csv")){
+        toast("CSVではないかも", "CSVファイルをドロップして");
+        return;
+      }
+      await importCsvFile(file);
+    });
+  }
+
+  if (csvDropInput){
+    csvDropInput.addEventListener("change", async () => {
+      const file = csvDropInput.files && csvDropInput.files[0] ? csvDropInput.files[0] : null;
+      if (file) await importCsvFile(file);
+      csvDropInput.value = "";
+    });
+  }
 
   async function importJsonFile(file){
     try{
       const text = await readFileAsText(file);
-      $("#importJsonArea").value = text;
+      const area = $("#importJsonArea");
+      if (area) area.value = text;
       importAllFromString(text, `ファイル：${file.name}`);
     } catch(e){
       console.error(e);
@@ -2749,20 +4466,37 @@
         `Base件数：${Object.keys(imported.masterBase||{}).length}\n` +
         `Price件数：${Object.keys(imported.masterPrice||{}).length}\n` +
         `recipes件数：${Object.keys(imported.recipes||{}).length}\n\n` +
-        `※仕様：端末にあるPrice（最新CSV）を優先保持します`;
+        `※端末にあるPrice（最新CSV）を優先保持します`;
       if (!confirm(msg)) return;
 
       const currentPrice = deepClone(state.masterPrice || {});
       Object.assign(state, imported);
-
       state.masterPrice = mergePricePreferCurrent(currentPrice, state.masterPrice);
+
+      state.menuSales = state.menuSales || { sourceName:"", importedAt:"", sheetName:"", items:{} };
+      state.menuSales.items = state.menuSales.items || {};
+      state.menuRecipeLinks = state.menuRecipeLinks || {};
+      state.salesHiddenMenus = state.salesHiddenMenus || {};
+      state.salesTypeOverrides = state.salesTypeOverrides || {};
+      state.ui = state.ui || {};
+      if (!Array.isArray(state.ui.recipeSel)) state.ui.recipeSel = [];
+      if (!Array.isArray(state.ui.salesMenuSel)) state.ui.salesMenuSel = [];
 
       for (const k of Object.keys(state.masterPrice || {})){
         if (!state.masterBase[k]){
           state.masterBase[k] = {
-            key: k, rawName: k, alias:"", yomi:"",
-            baseType:"個", baseQty:1, baseTypeAuto:"個", baseQtyAuto:1, multAuto:1,
-            baseQtyManual:false, note:"", updatedAt: nowIso()
+            key: k,
+            rawName: k,
+            alias:"",
+            yomi:"",
+            baseType:"個",
+            baseQty:1,
+            baseTypeAuto:"個",
+            baseQtyAuto:1,
+            multAuto:1,
+            baseQtyManual:false,
+            note:"",
+            updatedAt: nowIso()
           };
         }
       }
@@ -2771,10 +4505,12 @@
 
       recipeDraft = { id:null, name:"", yield:"", rows:[] };
       recipeSelection = new Set(Array.isArray(state.ui.recipeSel) ? state.ui.recipeSel : []);
+      salesMenuSelection = new Set(Array.isArray(state.ui.salesMenuSel) ? state.ui.salesMenuSel : []);
 
       renderImportKPIs();
       renderMaster();
       renderRecipe();
+      renderSales();
       renderData();
       toast("インポート完了", sourceLabel);
     } catch(e){
@@ -2783,38 +4519,83 @@
     }
   }
 
-  // ---------- Settings ----------
   $("#btnSaveCfg").addEventListener("click", () => {
     state.cfg.colName = $("#cfgColName").value;
     state.cfg.colPrice = $("#cfgColPrice").value;
     state.cfg.colSpec = $("#cfgColSpec").value;
     state.cfg.colUnit = $("#cfgColUnit").value;
+
+    state.salesCfg.sheetName = $("#salesSheetName").value;
+    state.salesCfg.colMenuName = $("#salesColMenuName").value || "D";
+    state.salesCfg.colQty = $("#salesColQty").value || "F";
+    state.salesCfg.colSellPrice = $("#salesColSellPrice").value || "E";
+    state.salesCfg.colSalesAmount = $("#salesColSalesAmount").value || "H";
+
     saveState(false);
-    toast("設定保存", "次回CSV取り込みから反映");
+    toast("設定保存", "次回読込から反映");
   });
 
   $("#btnResetCfg").addEventListener("click", () => {
     if (!confirm("設定をリセットする？")) return;
     state.cfg = { colName:"", colPrice:"", colSpec:"", colUnit:"" };
+state.salesCfg = {
+      sheetName:"",
+      colMenuName:"D",
+      colQty:"F",
+      colSellPrice:"E",
+      colSalesAmount:"H"
+    };
     saveState(false);
     renderData();
-    toast("設定リセット", "自動検出に戻した");
+    toast("設定リセット", "初期値に戻した");
   });
 
   function renderData(){
-    $("#cfgColName").value = safeText(state.cfg.colName);
-    $("#cfgColPrice").value = safeText(state.cfg.colPrice);
-    $("#cfgColSpec").value = safeText(state.cfg.colSpec);
-    $("#cfgColUnit").value = safeText(state.cfg.colUnit);
+    const cfgColName = $("#cfgColName");
+    const cfgColPrice = $("#cfgColPrice");
+    const cfgColSpec = $("#cfgColSpec");
+    const cfgColUnit = $("#cfgColUnit");
+
+    const salesSheetName = $("#salesSheetName");
+    const salesColMenuName = $("#salesColMenuName");
+    const salesColQty = $("#salesColQty");
+    const salesColSellPrice = $("#salesColSellPrice");
+    const salesColSalesAmount = $("#salesColSalesAmount");
+
+    if (cfgColName) cfgColName.value = safeText(state.cfg.colName);
+    if (cfgColPrice) cfgColPrice.value = safeText(state.cfg.colPrice);
+    if (cfgColSpec) cfgColSpec.value = safeText(state.cfg.colSpec);
+    if (cfgColUnit) cfgColUnit.value = safeText(state.cfg.colUnit);
+
+    if (salesSheetName) salesSheetName.value = safeText(state.salesCfg.sheetName);
+    if (salesColMenuName) salesColMenuName.value = safeText(state.salesCfg.colMenuName || "D");
+    if (salesColQty) salesColQty.value = safeText(state.salesCfg.colQty || "F");
+    if (salesColSellPrice) salesColSellPrice.value = safeText(state.salesCfg.colSellPrice || "E");
+    if (salesColSalesAmount) salesColSalesAmount.value = safeText(state.salesCfg.colSalesAmount || "H");
   }
 
-  // ---------- Boot ----------
   function boot(){
+    state.menuSales = state.menuSales || { sourceName:"", importedAt:"", sheetName:"", items:{} };
+    state.menuSales.items = state.menuSales.items || {};
+    state.menuRecipeLinks = state.menuRecipeLinks || {};
+    state.salesHiddenMenus = state.salesHiddenMenus || {};
+    state.salesTypeOverrides = state.salesTypeOverrides || {};
+    state.ui = state.ui || {};
+    if (!Array.isArray(state.ui.recipeSel)) state.ui.recipeSel = [];
+    if (!Array.isArray(state.ui.salesMenuSel)) state.ui.salesMenuSel = [];
+
     renderData();
     renderImportKPIs();
+
     recipeDraft = { id:null, name:"", yield:"", rows:[] };
+    recipeSelection = new Set(Array.isArray(state.ui.recipeSel) ? state.ui.recipeSel : []);
+    salesMenuSelection = new Set(Array.isArray(state.ui.salesMenuSel) ? state.ui.salesMenuSel : []);
+    if (chkShowHiddenSalesEl){
+      chkShowHiddenSalesEl.checked = !!state.ui.salesShowHidden;
+    }
     setTab(state.ui.lastTab || "import");
   }
+
   boot();
 })();
 </script>
