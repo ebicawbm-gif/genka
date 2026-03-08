@@ -70,7 +70,8 @@
     main{padding:18px 0 80px;}
     .grid{display:grid; grid-template-columns:1.2fr .8fr; gap:14px;}
     @media (max-width:980px){ .grid{grid-template-columns:1fr;} }
-
+    .recipeGrid{grid-template-columns:1.45fr .55fr;}
+    @media (max-width:980px){ .recipeGrid{grid-template-columns:1fr;} }
     .card{
       background: linear-gradient(180deg, rgba(16,24,38,.88), rgba(15,23,35,.85));
       border:1px solid rgba(33,48,74,.85);
@@ -672,6 +673,7 @@
               <div class="row">
                 <button class="btn small secondary" id="btnMasterExportCsv">マスターCSV出力</button>
                 <button class="btn small secondary" id="btnMasterExportJson">マスターJSON出力</button>
+                <button class="btn small danger" id="btnMasterResetManualToCsvTop">手動金額削除</button>
               </div>
             </div>
           </div>
@@ -705,18 +707,19 @@
               <span class="tag good">OK</span> = 基準量(Base) &gt; 0 かつ 単価(Price) &gt; 0。<br/>
               ケース単価なのに規格に24/C/Sが付くことがあるので、基準量(Base)を正に寄せる運用。
             </div>
-            <div class="row">
-              <button class="btn secondary" id="btnMasterSaveNow">今すぐ保存</button>
-              <button class="btn danger" id="btnMasterClearOverrides">基準量の手入力を全削除</button>
-            </div>
+<div class="row">
+  <button class="btn secondary" id="btnMasterSaveNow">今すぐ保存</button>
+  <button class="btn danger" id="btnMasterClearOverrides">基準量の手入力を全削除</button>
+  <button class="btn danger" id="btnMasterClearManualPrices">手動価格を全解除</button>
+</div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- RECIPE -->
-    <section id="tab-recipe" class="tabPage" style="display:none;">
-      <div class="grid">
+<section id="tab-recipe" class="tabPage" style="display:none;">
+  <div class="grid recipeGrid">
         <div class="card">
           <div class="hd">
             <div>
@@ -783,12 +786,18 @@
 
             <div class="hr"></div>
 
-            <div class="row">
-              <button class="btn good" id="btnAddRow">＋ 材料行を追加</button>
-              <button class="btn secondary" id="btnClearRecipe">行を全削除</button>
-            </div>
+            <div class="row" style="justify-content:space-between; align-items:center;">
+  <div class="row">
+    <button class="btn good" id="btnAddRow">＋ 材料行を追加</button>
+    <button class="btn secondary" id="btnClearRecipe">行を全削除</button>
+  </div>
+  <div class="row">
+    <button class="btn secondary" id="btnGoFixMasterTop">マスターを開く</button>
+    <button class="btn good" id="btnSaveRecipeTop">レシピ保存</button>
+  </div>
+</div>
 
-            <div class="hr"></div>
+<div class="hr"></div>
 
             <div class="recipeRows" id="recipeRows"></div>
 
@@ -939,28 +948,26 @@
             </div>
           </div>
 
-          <div class="hiddenMenuBox">
-            <div class="row" style="justify-content:space-between;">
-              <div class="tiny">
-                カテゴリ一括非表示：
-                <span class="mono" id="salesCategoryHiddenInfo">大0 / 中0</span>
-              </div>
-              <div class="tiny muted">
-                A列=大分類 / B列=中分類
-              </div>
-            </div>
+<details class="hiddenMenuBox">
+  <summary class="muted" style="cursor:pointer;">
+    カテゴリ一括非表示を表示（<span class="mono" id="salesCategoryHiddenInfo">大0 / 中0</span>）
+  </summary>
 
-            <div class="split" style="margin-top:10px;">
-              <div>
-                <div class="tiny" style="margin-bottom:8px;">大分類</div>
-                <div class="checkList" id="salesLargeCategoryList"></div>
-              </div>
-              <div>
-                <div class="tiny" style="margin-bottom:8px;">中分類</div>
-                <div class="checkList" id="salesMiddleCategoryList"></div>
-              </div>
-            </div>
-          </div>
+  <div class="tiny muted" style="margin-top:10px;">
+    A列=大分類 / B列=中分類
+  </div>
+
+  <div class="split" style="margin-top:10px;">
+    <div>
+      <div class="tiny" style="margin-bottom:8px;">大分類</div>
+      <div class="checkList" id="salesLargeCategoryList"></div>
+    </div>
+    <div>
+      <div class="tiny" style="margin-bottom:8px;">中分類</div>
+      <div class="checkList" id="salesMiddleCategoryList"></div>
+    </div>
+  </div>
+</details>
 
           <div class="hr"></div>
 
@@ -1012,16 +1019,12 @@
               <div class="summaryLine"><span>非表示件数</span><span class="v" id="sumHiddenMenus">0</span></div>
             </div>
           </div>
-
-          <div class="hiddenMenuBox">
-            <div class="row" style="justify-content:space-between;">
-              <div class="tiny">
-                非表示メニュー一覧：
-                <span class="mono" id="hiddenMenuCountInfo">0</span>
-              </div>
-            </div>
-            <div class="checkList" id="hiddenMenuList" style="margin-top:10px;"></div>
-          </div>
+<details class="hiddenMenuBox">
+  <summary class="muted" style="cursor:pointer;">
+    非表示メニュー一覧を表示（<span class="mono" id="hiddenMenuCountInfo">0</span>）
+  </summary>
+  <div class="checkList" id="hiddenMenuList" style="margin-top:10px;"></div>
+</details>
 
           <div class="hr"></div>
 
@@ -1376,32 +1379,27 @@
       s.masterBase[k] = b;
     }
 
-    for (const k of Object.keys(s.masterPrice)){
-      const p = s.masterPrice[k] || {};
-      p.key = p.key || k;
-      p.unitPrice = Number(p.unitPrice) || 0;
-      p.priceUnit = (p.priceUnit == null) ? "" : String(p.priceUnit);
-      p.spec = (p.spec == null) ? "" : String(p.spec);
-      p.updatedAt = p.updatedAt || nowIso();
-      s.masterPrice[k] = p;
+for (const k of Object.keys(s.masterPrice)){
+  const p = ensurePriceShape(s.masterPrice[k], k);
+  s.masterPrice[k] = p;
 
-      if (!s.masterBase[k]){
-        s.masterBase[k] = {
-          key: k,
-          rawName: k,
-          alias: "",
-          yomi: "",
-          baseType: "個",
-          baseQty: 1,
-          baseTypeAuto: "個",
-          baseQtyAuto: 1,
-          multAuto: 1,
-          baseQtyManual: false,
-          note: "",
-          updatedAt: nowIso()
-        };
-      }
-    }
+  if (!s.masterBase[k]){
+    s.masterBase[k] = {
+      key: k,
+      rawName: k,
+      alias: "",
+      yomi: "",
+      baseType: "個",
+      baseQty: 1,
+      baseTypeAuto: "個",
+      baseQtyAuto: 1,
+      multAuto: 1,
+      baseQtyManual: false,
+      note: "",
+      updatedAt: nowIso()
+    };
+  }
+}
 
     for (const id of Object.keys(s.recipes)){
       const r = s.recipes[id];
@@ -1548,22 +1546,146 @@
   }
   function cryptoId(){ return "r" + Math.random().toString(16).slice(2) + Date.now().toString(16); }
 
-  function getBase(key){ return state.masterBase[key] || null; }
-  function getPrice(key){ return state.masterPrice[key] || null; }
-  function getUnitCost(key){
-    const b = getBase(key);
-    const p = getPrice(key);
-    const unitPrice = Number(p && p.unitPrice) || 0;
-    const qty = Number(b && b.baseQty) || 0;
-    if (unitPrice > 0 && qty > 0) return unitPrice / qty;
-    return 0;
+function getBase(key){ return state.masterBase[key] || null; }
+
+function ensurePriceShape(p, key=""){
+  p = p || {};
+
+  const hasLegacyFields =
+    ("unitPrice" in p) || ("priceUnit" in p) || ("spec" in p) || ("updatedAt" in p);
+
+  const out = {
+    key: p.key || key || "",
+
+    csvUnitPrice: Number(p.csvUnitPrice) || 0,
+    csvPriceUnit: safeText(p.csvPriceUnit),
+    csvSpec: safeText(p.csvSpec),
+    csvUpdatedAt: safeText(p.csvUpdatedAt),
+
+    manualUnitPrice: Number(p.manualUnitPrice) || 0,
+    manualPriceUnit: safeText(p.manualPriceUnit),
+    manualSpec: safeText(p.manualSpec),
+    manualUpdatedAt: safeText(p.manualUpdatedAt),
+
+    useManual: !!p.useManual
+  };
+
+  const newShapeEmpty =
+    !(out.csvUnitPrice > 0) &&
+    !safeText(out.csvPriceUnit).trim() &&
+    !safeText(out.csvSpec).trim() &&
+    !safeText(out.csvUpdatedAt).trim();
+
+  // 旧Verの unitPrice / priceUnit / spec を csv側へ移す
+  if (hasLegacyFields && newShapeEmpty){
+    out.csvUnitPrice = Number(p.unitPrice) || 0;
+    out.csvPriceUnit = safeText(p.priceUnit);
+    out.csvSpec = safeText(p.spec);
+    out.csvUpdatedAt = safeText(p.updatedAt);
   }
-  function isReadyKey(key){
-    const b = getBase(key);
-    const p = getPrice(key);
-    if (!b || !p) return false;
-    return (Number(p.unitPrice) > 0) && (Number(b.baseQty) > 0) && safeText(b.baseType).trim().length > 0;
+
+  // 壊れたmanual状態を自動補正
+  if (out.useManual && !(Number(out.manualUnitPrice) > 0)){
+    out.useManual = false;
   }
+
+  return out;
+}
+
+function ensurePriceEntry(key){
+  const shaped = ensurePriceShape(state.masterPrice[key], key);
+  state.masterPrice[key] = shaped;
+  return shaped;
+}
+
+function startManualPriceEdit(key){
+  const p = ensurePriceEntry(key);
+
+  // 最初に手動編集へ入る時、CSV値を manual 側へコピーしておく
+  if (!p.useManual){
+    p.manualUnitPrice = Number(p.csvUnitPrice) || 0;
+    p.manualPriceUnit = safeText(p.csvPriceUnit);
+    p.manualSpec = safeText(p.csvSpec);
+    p.manualUpdatedAt = nowIso();
+  }
+
+  p.useManual = true;
+  return p;
+}
+
+function clearManualPrice(key){
+  const p = ensurePriceEntry(key);
+  p.manualUnitPrice = 0;
+  p.manualPriceUnit = "";
+  p.manualSpec = "";
+  p.manualUpdatedAt = "";
+  p.useManual = false;
+  return p;
+}
+
+function getCsvPrice(key){
+  const p = ensurePriceEntry(key);
+  return {
+    key: p.key,
+    unitPrice: Number(p.csvUnitPrice) || 0,
+    priceUnit: safeText(p.csvPriceUnit).trim(),
+    spec: safeText(p.csvSpec).trim(),
+    updatedAt: safeText(p.csvUpdatedAt),
+    source: "csv"
+  };
+}
+
+function getManualPrice(key){
+  const p = ensurePriceEntry(key);
+  return {
+    key: p.key,
+    unitPrice: Number(p.manualUnitPrice) || 0,
+    priceUnit: safeText(p.manualPriceUnit).trim(),
+    spec: safeText(p.manualSpec).trim(),
+    updatedAt: safeText(p.manualUpdatedAt),
+    source: "manual"
+  };
+}
+
+function getPriceSource(key){
+  const p = ensurePriceEntry(key);
+  return (p.useManual && Number(p.manualUnitPrice) > 0) ? "manual" : "csv";
+}
+
+function getPrice(key){
+  const p = ensurePriceEntry(key);
+
+  // manualがONでも manual単価が0ならCSVへ戻す
+  if (p.useManual && Number(p.manualUnitPrice) > 0){
+    return getManualPrice(key);
+  }
+
+  return getCsvPrice(key);
+}
+
+function getPriceForAutoDerive(key){
+  const p = getPrice(key);
+  return {
+    spec: safeText(p && p.spec).trim(),
+    priceUnit: safeText(p && p.priceUnit).trim()
+  };
+}
+
+function getUnitCost(key){
+  const b = getBase(key);
+  const p = getPrice(key);
+  const unitPrice = Number(p && p.unitPrice) || 0;
+  const qty = Number(b && b.baseQty) || 0;
+  if (unitPrice > 0 && qty > 0) return unitPrice / qty;
+  return 0;
+}
+
+function isReadyKey(key){
+  const b = getBase(key);
+  const p = getPrice(key);
+  if (!b || !p) return false;
+  return (Number(p.unitPrice) > 0) && (Number(b.baseQty) > 0) && safeText(b.baseType).trim().length > 0;
+}
 
   function sniffHeaderRow(rows){
     if (!rows.length) return null;
@@ -1976,16 +2098,16 @@ function normalizeSearch(s){
     let cnt = 0;
     for (const k of Object.keys(state.masterBase)){
       const b = state.masterBase[k];
-      const p = state.masterPrice[k] || { spec:"", priceUnit:"" };
-      if (!b.baseQtyManual){
-        const auto = autoDeriveBase(b.rawName, p.spec, p.priceUnit);
-        b.baseTypeAuto = auto.baseType;
-        b.baseQtyAuto = auto.baseQty;
-        b.multAuto = auto.mult;
-        b.baseType = b.baseType || auto.baseType;
-        b.baseQty = (Number(b.baseQty) > 0) ? b.baseQty : auto.baseQty;
-        cnt++;
-      }
+const p = getPriceForAutoDerive(k);
+if (!b.baseQtyManual){
+  const auto = autoDeriveBase(b.rawName, p.spec, p.priceUnit);
+  b.baseTypeAuto = auto.baseType;
+  b.baseQtyAuto = auto.baseQty;
+  b.multAuto = auto.mult;
+  b.baseType = auto.baseType;
+  b.baseQty = auto.baseQty;
+  cnt++;
+}
       b.updatedAt = nowIso();
     }
     saveState(false);
@@ -2026,24 +2148,13 @@ function normalizeSearch(s){
         const key = normKey(it.rawName);
         if (!key){ skipped++; continue; }
 
-        const base = state.masterBase[key];
-        const price = state.masterPrice[key];
+const base = state.masterBase[key];
+const price = ensurePriceEntry(key);
 
-        if (!price){
-          state.masterPrice[key] = {
-            key,
-            unitPrice: it.unitPrice || 0,
-            priceUnit: it.priceUnit || "",
-            spec: it.spec || "",
-            updatedAt: nowIso()
-          };
-        } else {
-          price.unitPrice = it.unitPrice || price.unitPrice;
-          price.priceUnit = it.priceUnit || price.priceUnit;
-          price.spec = it.spec || price.spec;
-          price.updatedAt = nowIso();
-        }
-
+price.csvUnitPrice = Number(it.unitPrice) || 0;
+price.csvPriceUnit = safeText(it.priceUnit).trim();
+price.csvSpec = safeText(it.spec).trim();
+price.csvUpdatedAt = nowIso();
         if (!base){
           const auto = autoDeriveBase(it.rawName, it.spec, it.priceUnit);
           state.masterBase[key] = {
@@ -2065,15 +2176,15 @@ function normalizeSearch(s){
           base.rawName = it.rawName;
 
           if (!base.baseQtyManual){
-            const p2 = state.masterPrice[key] || { spec:"", priceUnit:"" };
+            const p2 = getCsvPrice(key) || { spec:"", priceUnit:"" };
             const auto = autoDeriveBase(base.rawName, p2.spec, p2.priceUnit);
             base.baseTypeAuto = auto.baseType;
             base.baseQtyAuto = auto.baseQty;
             base.multAuto = auto.mult;
-
-            if (!safeText(base.baseType).trim()) base.baseType = auto.baseType;
-            if (!(Number(base.baseQty) > 0)) base.baseQty = auto.baseQty;
+            base.baseType = auto.baseType;
+            base.baseQty = auto.baseQty;
           }
+
           base.updatedAt = nowIso();
           updated++;
         }
@@ -2107,47 +2218,62 @@ function normalizeSearch(s){
     });
   }
 
-  function resolveColumnIndexes(headers, cfg){
-    if (headers){
-      const iName = headerIndex(headers, ["商品名","[商品名]","品名"]);
-      const iPrice = headerIndex(headers, ["単価","[単価]","卸単価","仕入単価"]);
-      const iSpec = headerIndex(headers, ["規格・入数／単位","規格","[規格・入数／単位]","規格入数","規格/入数"]);
-      const iUnit = headerIndex(headers, ["単位","[単位]","最終受領単位","[最終受領単位]"]);
+function resolveColumnIndexes(headers, cfg){
+  const fallback = (val, defIdx) => {
+    const s = safeText(val).trim();
+    if (!s) return defIdx;
+    if (/^\d+$/.test(s)) return parseInt(s, 10);
+    const col = excelColToIndex(s);
+    if (col >= 0) return col;
+    return defIdx;
+  };
 
-      const override = (val, current) => {
-        const s = safeText(val).trim();
-        if (!s) return current;
-        if (/^\d+$/.test(s)) return parseInt(s,10);
-        const col = excelColToIndex(s);
-        if (col >= 0) return col;
-        const idx = headerIndex(headers, [s]);
-        return idx >= 0 ? idx : current;
-      };
+  if (headers){
+    const iName  = headerIndex(headers, ["商品名","[商品名]","品名"]);
+    const iPrice = headerIndex(headers, ["単価","[単価]","卸単価","仕入単価"]);
+    const iSpec  = headerIndex(headers, ["規格・入数／単位","規格","[規格・入数／単位]","規格入数","規格/入数"]);
+    const iUnit  = headerIndex(headers, ["単位","[単位]","最終受領単位","[最終受領単位]"]);
 
-      return {
-        name: override(cfg.colName, iName >= 0 ? iName : 8),
-        price: override(cfg.colPrice, iPrice >= 0 ? iPrice : 10),
-        spec: override(cfg.colSpec, iSpec >= 0 ? iSpec : 9),
-        unit: override(cfg.colUnit, iUnit >= 0 ? iUnit : 12)
-      };
-    }
-
-    const fallback = (val, defIdx) => {
+    const pick = (val, detectedIdx, defIdx) => {
       const s = safeText(val).trim();
-      if (!s) return defIdx;
-      if (/^\d+$/.test(s)) return parseInt(s,10);
-      const col = excelColToIndex(s);
-      if (col >= 0) return col;
-      return defIdx;
+
+      // ヘッダ自動検出できているなら、それを最優先
+      // cfg は「ヘッダ名」で指定された時だけ補助的に使う
+      if (detectedIdx >= 0){
+        if (!s) return detectedIdx;
+
+        const isNumericIndex = /^\d+$/.test(s);
+        const isExcelCol = excelColToIndex(s) >= 0;
+
+        // K / 10 / M みたいな列指定は、ヘッダありCSVでは無視
+        if (isNumericIndex || isExcelCol){
+          return detectedIdx;
+        }
+
+        // cfgがヘッダ名指定なら、それだけ許可
+        const idx = headerIndex(headers, [s]);
+        return idx >= 0 ? idx : detectedIdx;
+      }
+
+      // ヘッダ自動検出できなかった時だけ cfg / 既定値にフォールバック
+      return fallback(val, defIdx);
     };
 
     return {
-      name: fallback(cfg.colName, 8),
-      price: fallback(cfg.colPrice, 10),
-      spec: fallback(cfg.colSpec, 9),
-      unit: fallback(cfg.colUnit, 12)
+      name:  pick(cfg.colName,  iName,  8),
+      price: pick(cfg.colPrice, iPrice, 10),
+      spec:  pick(cfg.colSpec,  iSpec,  9),
+      unit:  pick(cfg.colUnit,  iUnit, 12)
     };
   }
+
+  return {
+    name:  fallback(cfg.colName, 8),
+    price: fallback(cfg.colPrice, 10),
+    spec:  fallback(cfg.colSpec, 9),
+    unit:  fallback(cfg.colUnit, 12)
+  };
+}
 
   function extractItemsFromRows(rows, idx){
     const out = [];
@@ -2188,7 +2314,7 @@ function normalizeSearch(s){
       const b = state.masterBase[k];
       if (b.baseQtyManual){
         b.baseQtyManual = false;
-        const p = state.masterPrice[k] || { spec:"", priceUnit:"" };
+        const p = getPriceForAutoDerive(k);
         const auto = autoDeriveBase(b.rawName, p.spec, p.priceUnit);
         b.baseTypeAuto = auto.baseType;
         b.baseQtyAuto = auto.baseQty;
@@ -2203,6 +2329,12 @@ function normalizeSearch(s){
     renderMaster();
     toast("手入力を全削除", `${cnt}件を自動解析に戻した`);
   });
+$("#btnMasterClearManualPrices").addEventListener("click", resetAllManualPricesToCsv);
+
+const btnMasterResetManualToCsvTop = $("#btnMasterResetManualToCsvTop");
+if (btnMasterResetManualToCsvTop){
+  btnMasterResetManualToCsvTop.addEventListener("click", resetAllManualPricesToCsv);
+}
 
   $("#btnMasterExportJson").addEventListener("click", () => {
     const defaultName = `master_merged_v0_9_${dateTag()}.json`;
@@ -2220,63 +2352,134 @@ function normalizeSearch(s){
     downloadBlob(blob, `master_merged_v0_9_${dateTag()}.csv`);
     toast("マスターCSV出力", "ダウンロード開始");
   });
+function resetAllManualPricesToCsv(){
+  if (!confirm("手動で比較している価格を全部CSV基準へ戻す？")) return;
 
-  function getMergedMasterForExport(){
-    const out = {};
-    for (const k of Object.keys(state.masterBase)){
-      const b = state.masterBase[k];
-      const p = state.masterPrice[k] || {};
-      out[k] = {
-        key: b.key,
-        rawName: b.rawName,
-        alias: b.alias,
-        yomi: b.yomi,
-        baseType: b.baseType,
-        baseQty: b.baseQty,
-        baseTypeAuto: b.baseTypeAuto,
-        baseQtyAuto: b.baseQtyAuto,
-        multAuto: b.multAuto,
-        baseQtyManual: b.baseQtyManual,
-        note: b.note,
-        unitPrice: Number(p.unitPrice) || 0,
-        priceUnit: p.priceUnit || "",
-        spec: p.spec || "",
-        unitCost: getUnitCost(k),
-        updatedAtBase: b.updatedAt || "",
-        updatedAtPrice: p.updatedAt || ""
-      };
+  let cnt = 0;
+
+  for (const k of Object.keys(state.masterPrice)){
+    const p = ensurePriceEntry(k);
+    if (!p.useManual) continue;
+
+    clearManualPrice(k);
+
+    const base = state.masterBase[k];
+    const price = getPriceForAutoDerive(k);
+
+    if (base && !base.baseQtyManual){
+      const auto = autoDeriveBase(base.rawName, price.spec, price.priceUnit);
+      base.baseTypeAuto = auto.baseType;
+      base.baseQtyAuto = auto.baseQty;
+      base.multAuto = auto.mult;
+      base.baseType = auto.baseType;
+      base.baseQty = auto.baseQty;
+      base.updatedAt = nowIso();
     }
-    return out;
+
+    cnt++;
   }
 
-  function masterToCsvMerged(){
-    const header = [
-      "rawName","alias","yomi","unitPrice","priceUnit","spec",
-      "baseType","baseQty","unitCost","note","updatedAtBase","updatedAtPrice"
+  saveState(false);
+  renderMaster();
+  renderImportKPIs();
+  toast("手動価格を全解除", `${cnt}件をCSV基準に戻した`);
+}
+
+function getMergedMasterForExport(){
+  const out = {};
+  for (const k of Object.keys(state.masterBase)){
+    const b = state.masterBase[k];
+    const rawP = ensurePriceEntry(k);
+    const p = getPrice(k) || {};
+
+    out[k] = {
+      key: b.key,
+      rawName: b.rawName,
+      alias: b.alias,
+      yomi: b.yomi,
+      baseType: b.baseType,
+      baseQty: b.baseQty,
+      baseTypeAuto: b.baseTypeAuto,
+      baseQtyAuto: b.baseQtyAuto,
+      multAuto: b.multAuto,
+      baseQtyManual: b.baseQtyManual,
+      note: b.note,
+
+      unitPrice: Number(p.unitPrice) || 0,
+      priceUnit: p.priceUnit || "",
+      spec: p.spec || "",
+      priceSource: getPriceSource(k),
+
+      csvUnitPrice: Number(rawP.csvUnitPrice) || 0,
+      csvPriceUnit: rawP.csvPriceUnit || "",
+      csvSpec: rawP.csvSpec || "",
+      csvUpdatedAt: rawP.csvUpdatedAt || "",
+
+      manualUnitPrice: Number(rawP.manualUnitPrice) || 0,
+      manualPriceUnit: rawP.manualPriceUnit || "",
+      manualSpec: rawP.manualSpec || "",
+      manualUpdatedAt: rawP.manualUpdatedAt || "",
+      useManual: !!rawP.useManual,
+
+      unitCost: getUnitCost(k),
+      updatedAtBase: b.updatedAt || ""
+    };
+  }
+  return out;
+}
+
+function masterToCsvMerged(){
+  const header = [
+    "rawName","alias","yomi",
+    "unitPrice","priceUnit","spec","priceSource",
+    "csvUnitPrice","csvPriceUnit","csvSpec",
+    "manualUnitPrice","manualPriceUnit","manualSpec","useManual",
+    "baseType","baseQty","unitCost","note",
+    "updatedAtBase","csvUpdatedAt","manualUpdatedAt"
+  ];
+
+  const lines = [header.join(",")];
+  const entries = Object.values(state.masterBase).sort((a,b)=>a.rawName.localeCompare(b.rawName, "ja"));
+
+  for (const b of entries){
+    const rawP = ensurePriceEntry(b.key);
+    const p = getPrice(b.key) || {};
+    const unitCost = getUnitCost(b.key);
+
+    const row = [
+      csvCell(b.rawName),
+      csvCell(b.alias),
+      csvCell(b.yomi),
+
+      csvCell(Number(p.unitPrice)||0),
+      csvCell(p.priceUnit||""),
+      csvCell(p.spec||""),
+      csvCell(getPriceSource(b.key)),
+
+      csvCell(Number(rawP.csvUnitPrice)||0),
+      csvCell(rawP.csvPriceUnit||""),
+      csvCell(rawP.csvSpec||""),
+
+      csvCell(Number(rawP.manualUnitPrice)||0),
+      csvCell(rawP.manualPriceUnit||""),
+      csvCell(rawP.manualSpec||""),
+      csvCell(rawP.useManual ? "1" : "0"),
+
+      csvCell(b.baseType),
+      csvCell(Number(b.baseQty)||0),
+      csvCell(unitCost),
+      csvCell(b.note),
+
+      csvCell(b.updatedAt||""),
+      csvCell(rawP.csvUpdatedAt||""),
+      csvCell(rawP.manualUpdatedAt||"")
     ];
-    const lines = [header.join(",")];
-    const entries = Object.values(state.masterBase).sort((a,b)=>a.rawName.localeCompare(b.rawName, "ja"));
-    for (const b of entries){
-      const p = state.masterPrice[b.key] || {};
-      const unitCost = getUnitCost(b.key);
-      const row = [
-        csvCell(b.rawName),
-        csvCell(b.alias),
-        csvCell(b.yomi),
-        csvCell(Number(p.unitPrice)||0),
-        csvCell(p.priceUnit||""),
-        csvCell(p.spec||""),
-        csvCell(b.baseType),
-        csvCell(Number(b.baseQty)||0),
-        csvCell(unitCost),
-        csvCell(b.note),
-        csvCell(b.updatedAt||""),
-        csvCell(p.updatedAt||"")
-      ];
-      lines.push(row.join(","));
-    }
-    return lines.join("\n");
+
+    lines.push(row.join(","));
   }
+
+  return lines.join("\n");
+}
 
   function csvCell(v){
     const s = safeText(v);
@@ -2351,47 +2554,65 @@ function normalizeSearch(s){
         });
       }
 
-      const priceEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="unitPrice"]`);
-      if (priceEl){
-        priceEl.addEventListener("input", () => {
-          if (!state.masterPrice[key]) state.masterPrice[key] = { key, unitPrice:0, priceUnit:"", spec:"", updatedAt: nowIso() };
-          state.masterPrice[key].unitPrice = toNumber(priceEl.value);
-          state.masterPrice[key].updatedAt = nowIso();
-          saveState();
-          renderImportKPIs();
-          updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateUpdatedAt:true });
-        });
-      }
+const priceEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="unitPrice"]`);
+if (priceEl){
+  priceEl.addEventListener("input", () => {
+    const p = startManualPriceEdit(key);
+    p.manualUnitPrice = toNumber(priceEl.value);
+    p.manualUpdatedAt = nowIso();
 
-      const unitEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="priceUnit"]`);
-      if (unitEl){
-        unitEl.addEventListener("change", () => {
-          if (!state.masterPrice[key]) state.masterPrice[key] = { key, unitPrice:0, priceUnit:"", spec:"", updatedAt: nowIso() };
-          state.masterPrice[key].priceUnit = unitEl.value;
-          state.masterPrice[key].updatedAt = nowIso();
+    saveState();
+    renderImportKPIs();
+    updateMasterRowDisplay(key, {
+      updateCost:true,
+      updateStatus:true,
+      updateAutoDetail:true,
+      updateUpdatedAt:true
+    });
+  });
+}
 
-          const base = state.masterBase[key];
-          const price = state.masterPrice[key];
-          if (base && !base.baseQtyManual){
-            const auto = autoDeriveBase(base.rawName, price.spec, price.priceUnit);
-            base.baseTypeAuto = auto.baseType;
-            base.baseQtyAuto = auto.baseQty;
-            base.multAuto = auto.mult;
-            base.baseType = auto.baseType;
-            base.baseQty = auto.baseQty;
-            base.updatedAt = nowIso();
+const unitEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="priceUnit"]`);
+if (unitEl){
+  unitEl.addEventListener("change", () => {
+    const p = startManualPriceEdit(key);
+    p.manualPriceUnit = unitEl.value;
 
-            const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
-            const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
-            if (bqEl) bqEl.value = String(Number(base.baseQty)||0);
-            if (btEl) btEl.value = String(base.baseType||"個");
-          }
+    // spec は今のUIではCSV由来をそのまま使う
+    if (!safeText(p.manualSpec).trim()){
+      p.manualSpec = safeText(p.csvSpec).trim();
+    }
 
-          saveState();
-          renderImportKPIs();
-          updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateAutoDetail:true, updateUpdatedAt:true });
-        });
-      }
+    p.manualUpdatedAt = nowIso();
+
+    const base = state.masterBase[key];
+const price = getPriceForAutoDerive(key);
+
+if (base && !base.baseQtyManual){
+  const auto = autoDeriveBase(base.rawName, price.spec, price.priceUnit);
+  base.baseTypeAuto = auto.baseType;
+  base.baseQtyAuto = auto.baseQty;
+  base.multAuto = auto.mult;
+  base.baseType = auto.baseType;
+  base.baseQty = auto.baseQty;
+  base.updatedAt = nowIso();
+
+  const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
+  const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
+  if (bqEl) bqEl.value = String(Number(base.baseQty)||0);
+  if (btEl) btEl.value = String(base.baseType||"個");
+}
+
+    saveState();
+    renderImportKPIs();
+    updateMasterRowDisplay(key, {
+      updateCost:true,
+      updateStatus:true,
+      updateAutoDetail:true,
+      updateUpdatedAt:true
+    });
+  });
+}
 
       const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
       if (btEl){
@@ -2428,30 +2649,71 @@ function normalizeSearch(s){
       }
 
       const btnRe = document.querySelector(`[data-k="${cssEscape(key)}"][data-act="reparse"]`);
-      if (btnRe){
-        btnRe.addEventListener("click", () => {
-          const base = state.masterBase[key];
-          const price = state.masterPrice[key] || { spec:"", priceUnit:"" };
-          const auto = autoDeriveBase(base.rawName, price.spec, price.priceUnit);
-          base.baseTypeAuto = auto.baseType;
-          base.baseQtyAuto = auto.baseQty;
-          base.multAuto = auto.mult;
-          base.baseType = auto.baseType;
-          base.baseQty = auto.baseQty;
-          base.baseQtyManual = false;
-          base.updatedAt = nowIso();
+if (btnRe){
+  btnRe.addEventListener("click", () => {
+    const base = state.masterBase[key];
+    const price = getPriceForAutoDerive(key);
+    const auto = autoDeriveBase(base.rawName, price.spec, price.priceUnit);
 
-          const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
-          const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
-          if (bqEl) bqEl.value = String(Number(base.baseQty)||0);
-          if (btEl) btEl.value = String(base.baseType||"個");
+    base.baseTypeAuto = auto.baseType;
+    base.baseQtyAuto = auto.baseQty;
+    base.multAuto = auto.mult;
+    base.baseType = auto.baseType;
+    base.baseQty = auto.baseQty;
+    base.baseQtyManual = false;
+    base.updatedAt = nowIso();
 
-          saveState(false);
-          renderImportKPIs();
-          updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateAutoDetail:true, updateUpdatedAt:true });
-          toast("自動解析を反映", buildAliasDefault(base.rawName));
-        });
-      }
+    const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
+    const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
+    if (bqEl) bqEl.value = String(Number(base.baseQty)||0);
+    if (btEl) btEl.value = String(base.baseType||"個");
+
+    saveState(false);
+    renderImportKPIs();
+    updateMasterRowDisplay(key, { updateCost:true, updateStatus:true, updateAutoDetail:true, updateUpdatedAt:true });
+    toast("自動解析を反映", buildAliasDefault(base.rawName));
+  });
+}
+
+      const btnResetPrice = document.querySelector(`[data-k="${cssEscape(key)}"][data-act="resetPrice"]`);
+if (btnResetPrice){
+  btnResetPrice.addEventListener("click", () => {
+    clearManualPrice(key);
+
+    const base = state.masterBase[key];
+    const price = getPrice(key);
+
+    if (base && !base.baseQtyManual){
+      const auto = autoDeriveBase(base.rawName, price.spec, price.priceUnit);
+      base.baseTypeAuto = auto.baseType;
+      base.baseQtyAuto = auto.baseQty;
+      base.multAuto = auto.mult;
+      base.baseType = auto.baseType;
+      base.baseQty = auto.baseQty;
+      base.updatedAt = nowIso();
+
+      const bqEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseQty"]`);
+      const btEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="baseType"]`);
+      const unitEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="priceUnit"]`);
+      const priceEl = document.querySelector(`[data-k="${cssEscape(key)}"][data-f="unitPrice"]`);
+
+      if (bqEl) bqEl.value = String(Number(base.baseQty)||0);
+      if (btEl) btEl.value = String(base.baseType||"個");
+      if (unitEl) unitEl.value = safeText(price.priceUnit || "");
+      if (priceEl) priceEl.value = String(Number(price.unitPrice) || 0);
+    }
+
+    saveState(false);
+    renderImportKPIs();
+    updateMasterRowDisplay(key, {
+      updateCost:true,
+      updateStatus:true,
+      updateAutoDetail:true,
+      updateUpdatedAt:true
+    });
+    toast("CSV基準に戻した", safeText(base ? base.rawName : key));
+  });
+}
 
       const btnDel = document.querySelector(`[data-k="${cssEscape(key)}"][data-act="delete"]`);
       if (btnDel){
@@ -2467,14 +2729,16 @@ function normalizeSearch(s){
         });
       }
     }
-  }
+  }    
 
   function updateMasterRowDisplay(key, opts){
     const tr = masterRowMap.get(key);
     if (!tr) return;
 
     const b = state.masterBase[key];
-    const p = state.masterPrice[key] || { unitPrice:0, priceUnit:"", spec:"", updatedAt:"" };
+    const rawP = ensurePriceEntry(key);
+const p = getPrice(key) || { unitPrice:0, priceUnit:"", spec:"", updatedAt:"" };
+const priceSource = getPriceSource(key);
     if (!b) return;
 
     if (opts && opts.updateStatus){
@@ -2482,8 +2746,11 @@ function normalizeSearch(s){
       if (statusWrap){
         const ok = isReadyKey(key);
         const statusTag = ok ? `<span class="tag good">OK</span>` : `<span class="tag bad">NG</span>`;
-        const autoHint = (b.baseQtyManual) ? `<span class="tag warn">手入力</span>` : `<span class="tag">自動</span>`;
-        statusWrap.innerHTML = `${statusTag} ${autoHint}`;
+const autoHint = (b.baseQtyManual) ? `<span class="tag warn">手入力</span>` : `<span class="tag">自動</span>`;
+const sourceTag = priceSource === "manual"
+  ? `<span class="tag warn">手動比較中</span>`
+  : `<span class="tag">CSV基準</span>`;
+statusWrap.innerHTML = `${statusTag} ${autoHint} ${sourceTag}`;
       }
 
       const aliasWarnEl = tr.querySelector(`[data-role="aliasWarn"]`);
@@ -2521,15 +2788,17 @@ function normalizeSearch(s){
     if (opts && opts.updateUpdatedAt){
       const upd = tr.querySelector(`[data-role="updatedAt"]`);
       if (upd){
-        upd.textContent = `更新：Base ${shortTime(b.updatedAt)} / Price ${shortTime(p.updatedAt)}`;
+        upd.textContent = `更新：Base ${shortTime(b.updatedAt)} / CSV ${shortTime(rawP.csvUpdatedAt)} / 手動 ${shortTime(rawP.manualUpdatedAt)}`;
       }
     }
   }
 
   function masterRowHtml(b){
-    const p = state.masterPrice[b.key] || { unitPrice:0, priceUnit:"", spec:"", updatedAt:"" };
-    const unitCost = getUnitCost(b.key);
-    const ok = isReadyKey(b.key);
+const rawP = ensurePriceEntry(b.key);
+const p = getPrice(b.key) || { unitPrice:0, priceUnit:"", spec:"", updatedAt:"" };
+const priceSource = getPriceSource(b.key);
+const unitCost = getUnitCost(b.key);
+const ok = isReadyKey(b.key);
 
     const costLabel = ok
       ? `<span class="goodText mono">¥${fmt(unitCost, 4)}</span> / <span class="mono">${escapeHtml(b.baseType)}</span>`
@@ -2537,6 +2806,9 @@ function normalizeSearch(s){
 
     const statusTag = ok ? `<span class="tag good">OK</span>` : `<span class="tag bad">NG</span>`;
     const autoHint = (b.baseQtyManual) ? `<span class="tag warn">手入力</span>` : `<span class="tag">自動</span>`;
+    const sourceTag = priceSource === "manual"
+  ? `<span class="tag warn">手動比較中</span>`
+  : `<span class="tag">CSV基準</span>`;
 
     const baseTypeOptions = ["ml","g","個"].map(u => `<option value="${u}" ${b.baseType===u?"selected":""}>${u}</option>`).join("");
     const priceUnit = safeText(p.priceUnit).trim();
@@ -2555,7 +2827,7 @@ function normalizeSearch(s){
       <tr data-row="${escapeHtmlAttr(b.key)}">
         <td>
           <div style="font-weight:800;">${escapeHtml(b.rawName)}</div>
-          <div class="tiny" data-role="status">${statusTag} ${autoHint}</div>
+          <div class="tiny" data-role="status">${statusTag} ${autoHint} ${sourceTag}</div>
         </td>
         <td>
           <input type="text" data-k="${escapeHtmlAttr(b.key)}" data-f="alias" placeholder="例：ゾットブロンド / ガムシロ" value="${escapeHtmlAttr(b.alias||"")}" />
@@ -2573,7 +2845,7 @@ function normalizeSearch(s){
           <div class="tiny muted">単価が何単位か（Price）</div>
         </td>
         <td>
-          <div class="mono">${escapeHtml(p.spec||"")}</div>
+          <div class="mono">${escapeHtml(rawP.csvSpec||"")}</div>
           <div class="tiny muted">CSV由来（Price）</div>
         </td>
         <td>
@@ -2595,11 +2867,14 @@ function normalizeSearch(s){
           <input type="text" data-k="${escapeHtmlAttr(b.key)}" data-f="note" placeholder="例：本単価 / 仕入先 / 補足" value="${escapeHtmlAttr(b.note||"")}" />
         </td>
         <td>
-          <div class="row" style="gap:8px;">
-            <button class="btn small secondary" data-k="${escapeHtmlAttr(b.key)}" data-act="reparse">自動解析</button>
-            <button class="btn small danger" data-k="${escapeHtmlAttr(b.key)}" data-act="delete">削除</button>
-          </div>
-          <div class="tiny muted" data-role="updatedAt">更新：Base ${escapeHtml(shortTime(b.updatedAt))} / Price ${escapeHtml(shortTime(p.updatedAt))}</div>
+<div class="row" style="gap:8px;">
+  <button class="btn small secondary" data-k="${escapeHtmlAttr(b.key)}" data-act="reparse">自動解析</button>
+  <button class="btn small secondary" data-k="${escapeHtmlAttr(b.key)}" data-act="resetPrice">CSVに戻す</button>
+  <button class="btn small danger" data-k="${escapeHtmlAttr(b.key)}" data-act="delete">削除</button>
+</div>
+          <div class="tiny muted" data-role="updatedAt">
+  更新：Base ${escapeHtml(shortTime(b.updatedAt))} / CSV ${escapeHtml(shortTime(rawP.csvUpdatedAt))} / 手動 ${escapeHtml(shortTime(rawP.manualUpdatedAt))}
+</div>
         </td>
       </tr>
     `;
@@ -2619,8 +2894,11 @@ function createEmptyRecipeDraft(){
     renderRecipeRows();
     recalcRecipe();
   });
-  $("#btnGoFixMaster").addEventListener("click", () => setTab("master"));
-  $("#btnSaveRecipe").addEventListener("click", () => saveRecipeDraft());
+$("#btnGoFixMaster").addEventListener("click", () => setTab("master"));
+$("#btnSaveRecipe").addEventListener("click", () => saveRecipeDraft());
+
+$("#btnGoFixMasterTop").addEventListener("click", () => setTab("master"));
+$("#btnSaveRecipeTop").addEventListener("click", () => saveRecipeDraft());
 
   $("#recipeName").addEventListener("input", () => { recipeDraft.name = $("#recipeName").value; });
   $("#recipeYield").addEventListener("input", () => { recipeDraft.yield = $("#recipeYield").value; recalcRecipe(); });
@@ -4449,17 +4727,34 @@ setTextIfExists("#salesSelectedCountInfo", String(selectedVisible));
     });
   }
 
-  function mergePricePreferCurrent(currentPrice, importedPrice){
-    const out = deepClone(importedPrice || {});
-    const cur = currentPrice || {};
-    for (const k of Object.keys(cur)){
-      const c = cur[k] || {};
-      const hasCurrent = Number(c.unitPrice) > 0 || safeText(c.priceUnit).trim() || safeText(c.spec).trim();
-      if (hasCurrent) out[k] = c;
-      else if (!out[k]) out[k] = c;
-    }
-    return out;
+function mergePricePreferCurrent(currentPrice, importedPrice){
+  const out = deepClone(importedPrice || {});
+  const cur = currentPrice || {};
+
+  for (const k of Object.keys(cur)){
+    const c = ensurePriceShape(cur[k], k);
+
+    const hasCurrentCsv =
+      Number(c.csvUnitPrice) > 0 ||
+      safeText(c.csvPriceUnit).trim() ||
+      safeText(c.csvSpec).trim();
+
+    const hasCurrentManual =
+      c.useManual ||
+      Number(c.manualUnitPrice) > 0 ||
+      safeText(c.manualPriceUnit).trim() ||
+      safeText(c.manualSpec).trim();
+
+    if (hasCurrentCsv || hasCurrentManual) out[k] = c;
+    else if (!out[k]) out[k] = c;
   }
+
+  for (const k of Object.keys(out)){
+    out[k] = ensurePriceShape(out[k], k);
+  }
+
+  return out;
+}
 
   function importAllFromString(s, sourceLabel){
     try{
